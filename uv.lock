@@ -16,14 +16,26 @@ name = "gitpacman"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "mazegenerator" },
     { name = "pydantic" },
+    { name = "pygame" },
     { name = "wheel" },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "mazegenerator", path = "mazegenerator-00001-py3-none-any.whl" },
     { name = "pydantic", specifier = ">=2.13.3" },
+    { name = "pygame", specifier = ">=2.6.1" },
     { name = "wheel", specifier = ">=0.47.0" },
+]
+
+[[package]]
+name = "mazegenerator"
+version = "2.0.1"
+source = { path = "mazegenerator-00001-py3-none-any.whl" }
+wheels = [
+    { filename = "mazegenerator-1-py3-none-any.whl", hash = "sha256:f4b6828cd367570973bf901d90bbd6e5ae5cd4eb6d9cff18b1daa7b5c03599c3" },
 ]
 
 [[package]]
@@ -90,6 +102,12 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/b8/2a/c79cf53fd91e5a87e30d481809f52f9a60dd221e39de66455cf04deaad37/pydantic_core-2.46.3-cp314-cp314t-win_amd64.whl", hash = "sha256:706d9d0ce9cf4593d07270d8e9f53b161f90c57d315aeec4fb4fd7a8b10240d8", size = 2051305, upload-time = "2026-04-20T14:43:18.627Z" },
     { url = "https://files.pythonhosted.org/packages/0b/db/d8182a7f1d9343a032265aae186eb063fe26ca4c40f256b21e8da4498e89/pydantic_core-2.46.3-cp314-cp314t-win_arm64.whl", hash = "sha256:77706aeb41df6a76568434701e0917da10692da28cb69d5fb6919ce5fdb07374", size = 2026310, upload-time = "2026-04-20T14:41:01.778Z" },
 ]
+
+[[package]]
+name = "pygame"
+version = "2.6.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/49/cc/08bba60f00541f62aaa252ce0cfbd60aebd04616c0b9574f755b583e45ae/pygame-2.6.1.tar.gz", hash = "sha256:56fb02ead529cee00d415c3e007f75e0780c655909aaa8e8bf616ee09c9feb1f", size = 14808125, upload-time = "2024-09-29T13:41:34.698Z" }
 
 [[package]]
 name = "typing-extensions"

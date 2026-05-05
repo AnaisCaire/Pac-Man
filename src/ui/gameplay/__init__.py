@@ -1,0 +1,1 @@
+from .mazegraph import draw_maze
