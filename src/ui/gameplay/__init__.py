@@ -1,1 +1,1 @@
-from .mazegraph import draw_maze
+from .mazegraph import draw_maze, draw_player, draw_pacgums, draw_legend, draw_super_pacgums
