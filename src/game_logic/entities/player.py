@@ -1,6 +1,6 @@
 from typing import Tuple
-from .config import Config
-from .maze import Maze
+from ..config import Config
+from ..maze import Maze
 import pygame
 
 class Player:
@@ -29,6 +29,10 @@ class Player:
         self.progress: float = 0.0
         self.moving: bool = False
 
+        # remember spawn so we can reset position on respawn
+        self.spawn_x: int = start_grid_x
+        self.spawn_y: int = start_grid_y
+
         self.lives: int = config.lives
         self.score: int = 0
         # --- handle state ----
@@ -37,7 +41,11 @@ class Player:
         self.power_up_duration: int = 5000
         self.is_alive: bool = True
 
-        # helper functions:
+        # death animation state
+        self.is_dying: bool = False
+        self.death_progress: float = 0.0  # 0.0 = full size, 1.0 = fully shrunk
+        self.death_time: int = 0          # timestamp when animation finished
+        self.respawn_delay: int = 3000    # ms to wait before respawning
 
     def _can_move(self, maze: Maze, direction: Tuple[int, int]) -> bool:
         dir_to_wall = {(0, -1): 'N', (1, 0): 'E', (0, 1): 'S', (-1, 0): 'W'}
@@ -65,25 +73,74 @@ class Player:
                 # hits a wall
                 else:
                     self.moving = False
-                    self.current_direction = (0,0)
+                    self.current_direction = (0, 0)
         else:
             if self._can_move(maze, self.next_direction):
                 self.current_direction = self.next_direction
                 self.moving = True
-    
+
     def update_timers(self) -> None:
         """Check if any active timers have expired."""
         if self.is_powered_up:
             current_time = pygame.time.get_ticks()
-            # If current time minus start time is greater than the duration
             if current_time - self.power_up_start_time >= self.power_up_duration:
-                # Time is up! Remove the power-up.
                 self.is_powered_up = False
+
+        # advance death animation
+        if self.is_dying:
+            self.death_progress += 0.02
+            if self.death_progress >= 1.0:
+                # animation finished — lose a life and start respawn countdown
+                self.death_progress = 1.0
+                self.is_dying = False
+                self.is_alive = False
+                self.lives -= 1
+                self.death_time = pygame.time.get_ticks()
+
+        # respawn after delay if still has lives
+        if not self.is_alive and self.lives > 0:
+            current_time = pygame.time.get_ticks()
+            if current_time - self.death_time >= self.respawn_delay:
+                self.respawn()
+
+    def start_death_animation(self) -> None:
+        """Freeze movement and begin the shrink animation."""
+        if not self.is_dying:
+            self.is_dying = True
+            self.death_progress = 0.0
+            self.moving = False
+            self.current_direction = (0, 0)
+
+    def respawn(self) -> None:
+        """Reset position and state back to the spawn tile."""
+        self.grid_x = self.spawn_x
+        self.grid_y = self.spawn_y
+        self.progress = 0.0
+        self.moving = False
+        self.current_direction = (0, 0)
+        self.next_direction = (0, 0)
+        self.is_dying = False
+        self.death_progress = 0.0
+        self.is_alive = True
 
     def activate_power_up(self) -> None:
         """Trigger the power-up state and record the exact time."""
         self.is_powered_up = True
         self.power_up_start_time = pygame.time.get_ticks()
+
+def check_ghost_collision(player: Player, ghosts: list) -> None:
+    """Check if the player overlaps any ghost and react accordingly."""
+    if player.is_dying:
+        return  # already dying, ignore further collisions
+
+    for ghost in ghosts:
+        if ghost.grid_x == player.grid_x and ghost.grid_y == player.grid_y:
+            if ghost.is_frightened:
+                ghost.die()
+            elif not ghost.is_dead:
+                player.start_death_animation()
+                return  # one collision is enough per frame
+
 
 def check_collision(player: Player,
                     pacgums: set[tuple[int, int]],
