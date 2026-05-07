@@ -47,6 +47,11 @@ class Player:
         self.death_time: int = 0          # timestamp when animation finished
         self.respawn_delay: int = 3000    # ms to wait before respawning
 
+        # invincibility after respawn — prevents instant re-death
+        self.is_invincible: bool = False
+        self.invincibility_start: int = 0
+        self.invincibility_duration: int = 2000  # 2 seconds
+
     def _can_move(self, maze: Maze, direction: Tuple[int, int]) -> bool:
         dir_to_wall = {(0, -1): 'N', (1, 0): 'E', (0, 1): 'S', (-1, 0): 'W'}
         wall = dir_to_wall.get(direction)
@@ -103,6 +108,12 @@ class Player:
             if current_time - self.death_time >= self.respawn_delay:
                 self.respawn()
 
+        # expire invincibility window
+        if self.is_invincible:
+            current_time = pygame.time.get_ticks()
+            if current_time - self.invincibility_start >= self.invincibility_duration:
+                self.is_invincible = False
+
     def start_death_animation(self) -> None:
         """Freeze movement and begin the shrink animation."""
         if not self.is_dying:
@@ -122,6 +133,9 @@ class Player:
         self.is_dying = False
         self.death_progress = 0.0
         self.is_alive = True
+        # grant brief invincibility so a ghost on the spawn tile can't kill instantly
+        self.is_invincible = True
+        self.invincibility_start = pygame.time.get_ticks()
 
     def activate_power_up(self) -> None:
         """Trigger the power-up state and record the exact time."""
@@ -130,8 +144,8 @@ class Player:
 
 def check_ghost_collision(player: Player, ghosts: list) -> None:
     """Check if the player overlaps any ghost and react accordingly."""
-    if player.is_dying:
-        return  # already dying, ignore further collisions
+    if player.is_dying or not player.is_alive or player.is_invincible:
+        return  # ignore collisions during animation, waiting to respawn, or grace period
 
     for ghost in ghosts:
         if ghost.grid_x == player.grid_x and ghost.grid_y == player.grid_y:

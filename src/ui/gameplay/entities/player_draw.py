@@ -19,7 +19,7 @@ def draw_player(surface: pygame.Surface, player: Player, tile_size: int,
     px = offset_x + (player.grid_x + player.progress * player.current_direction[0]) * tile_size
     py = offset_y + (player.grid_y + player.progress * player.current_direction[1]) * tile_size
     # shrink radius to 0 as death_progress goes from 0.0 → 1.0
-    full_radius = tile_size // 3
+    full_radius = tile_size // 2.5
     radius = int(full_radius * (1.0 - player.death_progress))
     if radius <= 0:
         return  # fully shrunk — nothing to draw
@@ -38,3 +38,11 @@ def draw_player(surface: pygame.Surface, player: Player, tile_size: int,
                        int(center_y + radius * math.sin(theta))))
 
     pygame.draw.polygon(surface, PLAYER_COLOR, points)
+
+    # MABYE FIX EYE????
+    eye_angle = facing_mouth - math.pi / 3
+    eye_dist = radius * 0.55
+    eye_x = int(center_x + eye_dist * math.cos(eye_angle))
+    eye_y = int(center_y + eye_dist * math.sin(eye_angle))
+    eye_radius = max(2, radius // 4)
+    pygame.draw.circle(surface, (0, 0, 0), (eye_x, eye_y), eye_radius)

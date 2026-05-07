@@ -75,6 +75,14 @@ class Ghost:
         if not (0 <= self.grid_x < maze.width and 0 <= self.grid_y < maze.height):
             return False
 
+        # guard: target cell must also be in bounds and not a logo block (value 15)
+        target_x = self.grid_x + direction[0]
+        target_y = self.grid_y + direction[1]
+        if not (0 <= target_x < maze.width and 0 <= target_y < maze.height):
+            return False
+        if maze.is_wall(target_x, target_y):
+            return False
+
         dir_to_wall = {(0, -1): 'N', (1, 0): 'E', (0, 1): 'S', (-1, 0): 'W'}
         wall = dir_to_wall.get(direction)
         if wall is None:
