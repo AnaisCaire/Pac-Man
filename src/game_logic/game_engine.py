@@ -9,6 +9,7 @@ from ..ui.screens.gameover import GameOver
 from ..ui.screens.victory import VictoryScreen
 from ..ui.screens.sub_screens import HighscoreScreen, InstructionsScreen, PauseScreen
 from ..ui.gameplay import draw_maze, draw_player, draw_pacgums, draw_legend, draw_super_pacgums, draw_ghosts
+from ..ui.music_manager import MusicManager
 from .entities.player import Player, handle_input, check_collision, check_ghost_collision
 from .entities.ghost_types import Blinky, Pinky, Inky, Clyde
 
@@ -136,17 +137,20 @@ def _run_gameplay(screen: pygame.Surface, clock: pygame.time.Clock,
 
 def game_loop(config: Config) -> None:
     pygame.init()
+    pygame.mixer.init()
 
     screen = pygame.display.set_mode((WINDOW_SIZE, WINDOW_SIZE + HUB_HEIGHT))
     pygame.display.set_caption("Pac-Man")
     clock = pygame.time.Clock()
     font = pygame.font.SysFont(None, 36)
+    music = MusicManager()
 
     # --- all the windows ------
     state = GameState.MAIN_MENU
     current_level = 0
     current_score = 0
     current_lives = config.lives
+    music.play("menu")
     menu = MainMenu(WINDOW_SIZE, WINDOW_SIZE + HUB_HEIGHT)
     high_menu = HighscoreScreen(WINDOW_SIZE, WINDOW_SIZE + HUB_HEIGHT)
     inst_menu = InstructionsScreen(WINDOW_SIZE, WINDOW_SIZE + HUB_HEIGHT)
@@ -169,6 +173,7 @@ def game_loop(config: Config) -> None:
                     current_level = 0
                     current_score = 0
                     current_lives = config.lives
+                    music.play("game")
                     state = GameState.IN_GAME
                 elif action == "highscores":
                     state = GameState.HIGHSCORES
@@ -206,15 +211,18 @@ def game_loop(config: Config) -> None:
             if next_state == GameState.VICTORY:
                 current_level += 1
                 if current_level >= len(config.level):
+                    music.play("menu")
                     state = GameState.VICTORY
                 else:
                     state = GameState.IN_GAME
             elif next_state == GameState.GAME_OVER:
+                music.play("menu")
                 state = GameState.GAME_OVER
             elif next_state == GameState.MAIN_MENU:
                 current_level = 0
                 current_score = 0
                 current_lives = config.lives
+                music.play("menu")
                 state = GameState.MAIN_MENU
 
 
