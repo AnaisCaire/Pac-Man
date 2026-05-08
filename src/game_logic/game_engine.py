@@ -5,6 +5,9 @@ from enum import Enum
 from .config import Config
 from .maze import Maze
 from ..ui.screens.main_menu import MainMenu
+from ..ui.screens.gameover import GameOver
+from ..ui.screens.victory import VictoryScreen
+from ..ui.screens.sub_screens import HighscoreScreen, InstructionsScreen, PauseScreen
 from ..ui.gameplay import draw_maze, draw_player, draw_pacgums, draw_legend, draw_super_pacgums, draw_ghosts
 from .entities.player import Player, handle_input, check_collision, check_ghost_collision
 from .entities.ghost_types import Blinky, Pinky, Inky, Clyde
@@ -18,25 +21,36 @@ class GameState(Enum):
     MAIN_MENU = 1
     HIGHSCORES = 2
     IN_GAME = 3
-    PAUSE = 4
-    GAME_OVER = 5
-    VICTORY = 6
+    GAME_OVER = 4
+    VICTORY = 5
+    INSTRUCT = 6
 
 
 def _run_gameplay(screen: pygame.Surface, clock: pygame.time.Clock,
                   config: Config, font: pygame.font.Font,
-                  tile_size: int, offset_x: int, offset_y: int) -> GameState:
+                  pause_menu: PauseScreen,
+                  level_index: int,
+                  initial_score: int,
+                  initial_lives: int) -> tuple[GameState, int, int]:
     """
-    Run the in-game loop. 
-    Returns the next GameState when the game ends.
+    Run one level of gameplay.
+    Returns (next_state, final_score, final_lives).
     """
-    maze = Maze(config.level[0], seed=config.seed)
+    level_size = config.level[level_index]
+    tile_size = WINDOW_SIZE // max(level_size.width, level_size.height)
+    offset_x = (WINDOW_SIZE - tile_size * level_size.width) // 2
+    offset_y = (WINDOW_SIZE - tile_size * level_size.height) // 2
+
+    maze = Maze(level_size, seed=config.seed + level_index)
     spawn = sx, sy = maze.find_spawn()
     player = Player(sx, sy, tile_size, config)
+    player.score = initial_score
+    player.lives = initial_lives
     pacgums = maze.place_pacgums(spawn, config.pacgum)
     super_pacgums = maze.place_super_pacgums()
 
     level_start_time = pygame.time.get_ticks()
+    total_pause_ms = 0
 
     ghost_positions = maze.place_ghosts()
     ghost_classes = [Blinky, Pinky, Inky, Clyde]
@@ -54,11 +68,31 @@ def _run_gameplay(screen: pygame.Surface, clock: pygame.time.Clock,
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                pause_start = pygame.time.get_ticks()
+                paused = True
+                while paused:
+                    for pause_event in pygame.event.get():
+                        if pause_event.type == pygame.QUIT:
+                            pygame.quit()
+                            sys.exit()
+                        if pause_event.type == pygame.KEYDOWN and pause_event.key == pygame.K_ESCAPE:
+                            paused = False
+                        action = pause_menu.handle_event(pause_event)
+                        if action == "resume":
+                            paused = False
+                        elif action == "menu":
+                            return (GameState.MAIN_MENU, player.score, player.lives)
+                    pause_menu.update(pygame.mouse.get_pos())
+                    pause_menu.draw(screen)
+                    pygame.display.flip()
+                    clock.tick(60)
+                total_pause_ms += pygame.time.get_ticks() - pause_start
 
-        passed_secs = (current_time - level_start_time) // 1000
+        passed_secs = (current_time - level_start_time - total_pause_ms) // 1000
         time_left = max(0, config.level_max_time - passed_secs)
         if time_left == 0:
-            return GameState.GAME_OVER
+            return (GameState.GAME_OVER, player.score, player.lives)
 
         if not player.is_dying:
             player.update(maze)
@@ -73,9 +107,9 @@ def _run_gameplay(screen: pygame.Surface, clock: pygame.time.Clock,
         player.update_timers()
 
         if player.lives <= 0 and not player.is_alive and not player.is_dying:
-            return GameState.GAME_OVER
+            return (GameState.GAME_OVER, player.score, player.lives)
         if not pacgums and not super_pacgums:
-            return GameState.VICTORY
+            return (GameState.VICTORY, player.score, player.lives)
 
         for ghost in ghost_list:
             ghost.update(current_time, maze)
@@ -92,6 +126,7 @@ def _run_gameplay(screen: pygame.Surface, clock: pygame.time.Clock,
             time_left=time_left,
             score=player.score,
             lives=player.lives,
+            level_num=level_index + 1,
             is_powered_up=player.is_powered_up,
             hud_y_start=WINDOW_SIZE
         )
@@ -107,13 +142,18 @@ def game_loop(config: Config) -> None:
     clock = pygame.time.Clock()
     font = pygame.font.SysFont(None, 36)
 
-    level_size = config.level[0]
-    tile_size = WINDOW_SIZE // max(level_size.width, level_size.height)
-    offset_x = (WINDOW_SIZE - tile_size * level_size.width) // 2
-    offset_y = (WINDOW_SIZE - tile_size * level_size.height) // 2
-
+    # --- all the windows ------
     state = GameState.MAIN_MENU
+    current_level = 0
+    current_score = 0
+    current_lives = config.lives
     menu = MainMenu(WINDOW_SIZE, WINDOW_SIZE + HUB_HEIGHT)
+    high_menu = HighscoreScreen(WINDOW_SIZE, WINDOW_SIZE + HUB_HEIGHT)
+    inst_menu = InstructionsScreen(WINDOW_SIZE, WINDOW_SIZE + HUB_HEIGHT)
+    pause_menu = PauseScreen(WINDOW_SIZE, WINDOW_SIZE + HUB_HEIGHT)
+    gameover_menu = GameOver(WINDOW_SIZE, WINDOW_SIZE + HUB_HEIGHT)
+    victory_menu = VictoryScreen(WINDOW_SIZE, WINDOW_SIZE + HUB_HEIGHT)
+
 
     while True:
         events = pygame.event.get()
@@ -126,11 +166,14 @@ def game_loop(config: Config) -> None:
             for event in events:
                 action = menu.handle_event(event)
                 if action == "play":
+                    current_level = 0
+                    current_score = 0
+                    current_lives = config.lives
                     state = GameState.IN_GAME
                 elif action == "highscores":
                     state = GameState.HIGHSCORES
                 elif action == "instructions":
-                    pass  # TODO
+                    state = GameState.INSTRUCT
                 elif action == "quit":
                     pygame.quit()
                     sys.exit()
@@ -138,13 +181,58 @@ def game_loop(config: Config) -> None:
             menu.draw(screen)
 
         elif state == GameState.HIGHSCORES:
-            pass  # TODO: draw highscores screen
+            for event in events:
+                high_action = high_menu.handle_event(event)
+                if high_action == "back":
+                    state = GameState.MAIN_MENU
+            high_menu.update(pygame.mouse.get_pos())
+            high_menu.draw(screen)
+
+        elif state == GameState.INSTRUCT:
+            for event in events:
+                inst_action = inst_menu.handle_event(event)
+                if inst_action == "back":
+                    state = GameState.MAIN_MENU
+            inst_menu.update(pygame.mouse.get_pos())
+            inst_menu.draw(screen)
+
         elif state == GameState.IN_GAME:
-            state = _run_gameplay(screen, clock, config, font, tile_size, offset_x, offset_y)
+            next_state, current_score, current_lives = _run_gameplay(
+                screen, clock, config, font, pause_menu,
+                level_index=current_level,
+                initial_score=current_score,
+                initial_lives=current_lives
+            )
+            if next_state == GameState.VICTORY:
+                current_level += 1
+                if current_level >= len(config.level):
+                    state = GameState.VICTORY
+                else:
+                    state = GameState.IN_GAME
+            elif next_state == GameState.GAME_OVER:
+                state = GameState.GAME_OVER
+            elif next_state == GameState.MAIN_MENU:
+                current_level = 0
+                current_score = 0
+                current_lives = config.lives
+                state = GameState.MAIN_MENU
+
+
         elif state == GameState.GAME_OVER:
-            pass  # TODO: draw game over screen
+            for event in events:
+                gameover_action = gameover_menu.handle_event(event)
+                if gameover_action == "main menu":
+                    state = GameState.MAIN_MENU
+            gameover_menu.update(pygame.mouse.get_pos())
+            gameover_menu.draw(screen)
+
         elif state == GameState.VICTORY:
-            pass  # TODO: draw victory screen
+            for event in events:
+                victory_action = victory_menu.handle_event(event)
+                if victory_action == "main menu":
+                    state = GameState.MAIN_MENU
+            victory_menu.update(pygame.mouse.get_pos())
+            victory_menu.draw(screen)
 
         pygame.display.flip()
         clock.tick(60)

@@ -3,7 +3,7 @@ import pygame
 
 def draw_legend(surface: pygame.Surface, font: pygame.font.Font,
                 time_left: int, score: int, lives: int,
-                is_powered_up: bool, hud_y_start: int) -> None:
+                level_num: int, is_powered_up: bool, hud_y_start: int) -> None:
     """Draws the game's HUD including timer, score, and lives."""
     TEXT_COLOR = (255, 255, 255)
     POWER_COLOR = (255, 255, 0)
@@ -26,6 +26,9 @@ def draw_legend(surface: pygame.Surface, font: pygame.font.Font,
 
     lives_text = font.render(f"LIVES: {lives}", True, TEXT_COLOR)
     surface.blit(lives_text, lives_text.get_rect(midright=(screen_width - 30, top_row_y)))
+
+    level_text = font.render(f"LEVEL: {level_num}", True, TEXT_COLOR)
+    surface.blit(level_text, level_text.get_rect(center=(screen_width // 2, hud_y_start + 70)))
 
     if is_powered_up:
         power_text = font.render("POWER PELLET ACTIVE!", True, POWER_COLOR)

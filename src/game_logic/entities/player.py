@@ -23,7 +23,7 @@ class Player:
         self.current_direction: Tuple[int, int] = (0, 0)
         self.next_direction: Tuple[int, int] = (0, 0)
 
-        self.speed: float = 2.0
+        self.speed: float = 3.0
         self.tile_size: int = tile_size
 
         self.progress: float = 0.0
