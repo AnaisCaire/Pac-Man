@@ -10,7 +10,7 @@ from ..ui.screens.victory import VictoryScreen
 from ..ui.screens.sub_screens import HighscoreScreen, InstructionsScreen, PauseScreen
 from ..ui.gameplay import draw_maze, draw_player, draw_pacgums, draw_legend, draw_super_pacgums, draw_ghosts
 from ..ui.music_manager import MusicManager
-from .entities.player import Player, handle_input, check_collision, check_ghost_collision
+from .entities.player import Player, handle_input
 from .entities.ghost_types import Blinky, Pinky, Inky, Clyde
 
 
@@ -47,8 +47,8 @@ def _run_gameplay(screen: pygame.Surface, clock: pygame.time.Clock,
     player = Player(sx, sy, tile_size, config)
     player.score = initial_score
     player.lives = initial_lives
-    pacgums = maze.place_pacgums(spawn, config.pacgum)
-    super_pacgums = maze.place_super_pacgums()
+    pacgums = maze.place_pacgums(spawn, config.pacgum, config.points_per_pacgum)
+    super_pacgums = maze.place_super_pacgums(config.points_per_super_pacgum)
 
     level_start_time = pygame.time.get_ticks()
     total_pause_ms = 0
@@ -98,13 +98,11 @@ def _run_gameplay(screen: pygame.Surface, clock: pygame.time.Clock,
         if not player.is_dying:
             player.update(maze)
         was_powered_up = player.is_powered_up
-        check_collision(player, pacgums, super_pacgums,
-                        config.points_per_pacgum,
-                        config.points_per_super_pacgum)
+        player.check_item_collision(pacgums, super_pacgums)
         if player.is_powered_up and not was_powered_up:
             for ghost in ghost_list:
                 ghost.frighten(current_time)
-        check_ghost_collision(player, ghost_list)
+        player.check_ghost_collision(ghost_list)
         player.update_timers()
 
         if player.lives <= 0 and not player.is_alive and not player.is_dying:

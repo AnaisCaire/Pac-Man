@@ -1,4 +1,5 @@
 from .config import LevelMazeSize
+from .entities.items import Pacgum, SuperPacgum
 from mazegenerator.mazegenerator import MazeGenerator
 import random
 
@@ -49,7 +50,8 @@ class Maze():
                         return (x, y)
         return (cx, cy)
 
-    def place_pacgums(self, spawn: tuple[int, int], count: int) -> set[tuple[int, int]]:
+    def place_pacgums(self, spawn: tuple[int, int], count: int,
+                      points_per_pacgum: int) -> dict[tuple[int, int], Pacgum]:
         candidates = [
             (x, y)
             for y in range(self.height)
@@ -57,14 +59,13 @@ class Maze():
             if (x, y) not in self.corners and not self.is_wall(x, y) and (x, y) != spawn
         ]
         count = min(count, len(candidates))
-        return set(random.sample(candidates, count))
+        return {(x, y): Pacgum(x, y, points_per_pacgum)
+                for (x, y) in random.sample(candidates, count)}
 
-    def place_super_pacgums(self) -> set[tuple[int, int]]:
+    def place_super_pacgums(self, points_per_super: int) -> dict[tuple[int, int], SuperPacgum]:
         """ for the corners """
-        super_pacgums: set[tuple[int, int]] = set()
-        for (corner_x, corner_y) in self.corners:
-            super_pacgums.add((corner_x, corner_y))
-        return super_pacgums
+        return {(cx, cy): SuperPacgum(cx, cy, points_per_super)
+                for (cx, cy) in self.corners}
     
     def _find_near_corner(self, cx: int, cy: int) -> tuple[int, int]:
         """

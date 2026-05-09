@@ -33,7 +33,7 @@ class GameOver():
                 return self.back_btn.action
         return None
 
-    def update(self, mouse_pos: tuple) -> None:
+    def update(self, mouse_pos: tuple[int, int]) -> None:
         self.back_btn.update(mouse_pos)
 
     def draw(self, surface: pygame.Surface) -> None:

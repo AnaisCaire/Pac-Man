@@ -11,5 +11,8 @@ dependencies = [
     "pygame>=2.6.1",
 ]
 
+[dependency-groups]
+dev = ["flake8>=7.0", "mypy>=1.0"]
+
 [tool.uv.sources]
 mazegenerator = { path = "mazegenerator-00001-py3-none-any.whl" }

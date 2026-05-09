@@ -42,12 +42,12 @@ class UIElement():
     def rect(self):
         return self.rects[1] if self.mouse_over else self.rects[0]
     
-    def update(self, mouse_pos):
+    def update(self, mouse_pos: tuple[int, int]) -> None:
         if self.rect.collidepoint(mouse_pos):
             self.mouse_over = True
         else:
             self.mouse_over = False
 
-    def draw(self, surface):
-        """ Draws element onto a surface """
+    def draw(self, surface: pygame.Surface) -> None:
+        """Draw the element onto a surface."""
         surface.blit(self.image, self.rect)

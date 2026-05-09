@@ -1,9 +1,17 @@
-from typing import Tuple
+from __future__ import annotations
+from typing import TYPE_CHECKING, Tuple
 from ..config import Config
-from ..maze import Maze
+from .entity import Entity
+from .items import Pacgum, SuperPacgum
 import pygame
 
-class Player:
+if TYPE_CHECKING:
+    from ..maze import Maze
+    from .ghosts import Ghost
+
+PLAYER_SPEED = 2.5
+
+class Player(Entity):
     """
     Represents the player entity in the maze.
     Handles grid position
@@ -17,16 +25,9 @@ class Player:
                  start_grid_y: int,
                  tile_size: int,
                  config: Config) -> None:
-        self.grid_x: int = start_grid_x
-        self.grid_y: int = start_grid_y
-
-        self.current_direction: Tuple[int, int] = (0, 0)
+        super().__init__(start_grid_x, start_grid_y, tile_size)
+        self.speed: float = PLAYER_SPEED
         self.next_direction: Tuple[int, int] = (0, 0)
-
-        self.speed: float = 3.0
-        self.tile_size: int = tile_size
-
-        self.progress: float = 0.0
         self.moving: bool = False
 
         # remember spawn so we can reset position on respawn
@@ -52,17 +53,8 @@ class Player:
         self.invincibility_start: int = 0
         self.invincibility_duration: int = 2000  # 2 seconds
 
-    def _can_move(self, maze: Maze, direction: Tuple[int, int]) -> bool:
-        dir_to_wall = {(0, -1): 'N', (1, 0): 'E', (0, 1): 'S', (-1, 0): 'W'}
-        wall = dir_to_wall.get(direction)
-        if wall is None:
-            return False
-        return not maze.has_wall(self.grid_x, self.grid_y, wall)
-
     def update(self, maze: Maze) -> None:
-        """
-        player mouvement
-        """
+        """Advance the player one frame: handle movement and wall collisions."""
         if self.moving:
             self.progress += self.speed / self.tile_size
             if self.progress >= 1.0:
@@ -142,37 +134,33 @@ class Player:
         self.is_powered_up = True
         self.power_up_start_time = pygame.time.get_ticks()
 
-def check_ghost_collision(player: Player, ghosts: list) -> None:
-    """Check if the player overlaps any ghost and react accordingly."""
-    if player.is_dying or not player.is_alive or player.is_invincible:
-        return  # ignore collisions during animation, waiting to respawn, or grace period
+    def check_ghost_collision(self, ghosts: list[Ghost]) -> None:
+        """Check if the player overlaps any ghost and react accordingly."""
+        if self.is_dying or not self.is_alive or self.is_invincible:
+            return
 
-    for ghost in ghosts:
-        if ghost.grid_x == player.grid_x and ghost.grid_y == player.grid_y:
-            if ghost.is_frightened:
-                ghost.die()
-            elif not ghost.is_dead:
-                player.start_death_animation()
-                return  # one collision is enough per frame
+        for ghost in ghosts:
+            if ghost.grid_x == self.grid_x and ghost.grid_y == self.grid_y:
+                if ghost.is_frightened:
+                    ghost.die()
+                elif not ghost.is_dead:
+                    self.start_death_animation()
+                    return  # one collision is enough per frame
 
+    def check_item_collision(self,
+                             pacgums: dict[tuple[int, int], Pacgum],
+                             super_pacgums: dict[tuple[int, int], SuperPacgum]) -> None:
+        """Remove pacgum or super pacgum if eaten and update score."""
+        if self.progress < 0.01:
+            return
+        pos = (self.grid_x, self.grid_y)
+        if pos in pacgums:
+            self.score += pacgums.pop(pos).points
+        elif pos in super_pacgums:
+            self.score += super_pacgums.pop(pos).points
+            self.activate_power_up()
 
-def check_collision(player: Player,
-                    pacgums: set[tuple[int, int]],
-                    super_pacgums: set[tuple[int, int]],
-                    points_per_pacgum: int,
-                    point_per_superpacgum: int) -> None:
-    """ remove pacgum if eaten """
-    if (player.grid_x, player.grid_y) in pacgums:
-        if player.progress >= 0.01:
-            pacgums.remove((player.grid_x, player.grid_y))
-            player.score += points_per_pacgum
-    if (player.grid_x, player.grid_y) in super_pacgums:
-        if player.progress >= 0.01:
-            super_pacgums.remove((player.grid_x, player.grid_y))
-            player.activate_power_up()
-            player.score += point_per_superpacgum
-
-def handle_input(player: Player, events: list) -> None:
+def handle_input(player: Player, events: list[pygame.event.Event]) -> None:
     for event in events:
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_UP:

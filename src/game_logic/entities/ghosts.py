@@ -1,9 +1,14 @@
+from __future__ import annotations
 from enum import Enum
-from typing import Tuple
-from ..maze import Maze
+from typing import TYPE_CHECKING, Tuple
 from .player import Player
+from .entity import Entity
 import random
 
+if TYPE_CHECKING:
+    from ..maze import Maze
+
+GHOST_SPEED = 1.5
 
 class GhostState(Enum):
     """
@@ -15,7 +20,7 @@ class GhostState(Enum):
     DEAD = 4        # Eaten
 
 
-class Ghost:
+class Ghost(Entity):
     """
     Base ghost class. Handles movement, state machine, and behavior.
     Subclasses override _get_chase_target() to implement unique chase behaviour.
@@ -30,23 +35,12 @@ class Ghost:
                  tile_size: int,
                  player: Player,
                  start_time: int) -> None:
-        """
-        Initialize the ghost with its home coordinates and movement stats.
-        """
+        super().__init__(start_grid_x, start_grid_y, tile_size)
+        self.speed: float = GHOST_SPEED
         self.home_x: int = start_grid_x
         self.home_y: int = start_grid_y
-
         self.state: GhostState = GhostState.SCATTER
         self.state_timer: int = start_time
-
-        self.grid_x: int = start_grid_x
-        self.grid_y: int = start_grid_y
-        self.tile_size: int = tile_size
-
-        self.current_direction: Tuple[int, int] = (0, 0)
-        self.progress: float = 0.0
-        self.speed: float = 2.0
-
         self.player = player
 
     # --------------------------
@@ -62,8 +56,8 @@ class Ghost:
         return (self.player.grid_x, self.player.grid_y)
 
     def _can_move(self, maze: Maze, direction: Tuple[int, int]) -> bool:
-        """ 
-        Ghost cannot go backwards except when frightened. 
+        """
+        Ghost cannot go backwards except when frightened.
         """
         # Prevent 180-degree turns unless frightened
         if self.current_direction != (0, 0) and self.state != GhostState.FRIGHTENED:
@@ -83,11 +77,7 @@ class Ghost:
         if maze.is_wall(target_x, target_y):
             return False
 
-        dir_to_wall = {(0, -1): 'N', (1, 0): 'E', (0, 1): 'S', (-1, 0): 'W'}
-        wall = dir_to_wall.get(direction)
-        if wall is None:
-            return False
-        return not maze.has_wall(self.grid_x, self.grid_y, wall)
+        return super()._can_move(maze, direction)
 
     def _choose_direction(self, maze: Maze) -> tuple[int, int]:
         """ Choose next direction based on current state and target tile. """
@@ -110,7 +100,6 @@ class Ghost:
         target_x, target_y = self.grid_x, self.grid_y
 
         if self.state == GhostState.CHASE:
-            # Delegate to subclass
             target_x, target_y = self._get_chase_target()
 
         elif self.state in (GhostState.SCATTER, GhostState.DEAD):

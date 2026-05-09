@@ -30,7 +30,7 @@ class HighscoreScreen():
                 return self.back_btn.action
         return None
     
-    def update(self, mouse_pos: tuple) -> None:
+    def update(self, mouse_pos: tuple[int, int]) -> None:
         """ update the mouse position"""
         self.back_btn.update(mouse_pos)
     
@@ -67,7 +67,7 @@ class InstructionsScreen():
                 return self.back_btn.action
         return None
 
-    def update(self, mouse_pos: tuple) -> None:
+    def update(self, mouse_pos: tuple[int, int]) -> None:
         self.back_btn.update(mouse_pos)
 
     def draw(self, surface: pygame.Surface) -> None:
@@ -113,7 +113,7 @@ class PauseScreen():
                     return button.action
         return None
 
-    def update(self, mouse_pos: tuple) -> None:
+    def update(self, mouse_pos: tuple[int, int]) -> None:
         for button in self.buttons:
             button.update(mouse_pos)
 

@@ -96,47 +96,6 @@ Items marked [BLOCKING] will cause an evaluator to fail the project outright.
   Fix:  Remove "pydantic>=2.13.3" from dependencies (dead weight, adds noise
         for evaluators checking the dependency list).
 
-==============================================================================
-4. OOP ARCHITECTURE — Missing base class, missing Items class
-==============================================================================
-
-[BLOCKING] 4.1 No shared MovingEntity base class — Player and Ghost are unrelated
-  Files: src/game_logic/entities/player.py,
-         src/game_logic/entities/ghosts.py
-  Fix:  Create src/game_logic/entities/moving_entity.py with a MovingEntity
-        base class containing at minimum:
-          grid_x: int, grid_y: int
-          current_direction: tuple[int, int]
-          progress: float
-          speed: float
-          tile_size: int
-          def update(self, maze: Maze) -> None  (abstract or base)
-          def _can_move(self, maze: Maze, direction: tuple[int, int]) -> bool
-        Then have Player(MovingEntity) and Ghost(MovingEntity).
-  Req:  "Base MovingEntity class with inheritance"
-
-[BLOCKING] 4.2 No Items class — pacgums and super-pacgums are bare sets of tuples
-  Files: src/game_logic/maze.py (place_pacgums, place_super_pacgums),
-         src/game_logic/game_engine.py (pacgums / super_pacgums variables),
-         src/game_logic/entities/player.py (check_collision)
-  Fix:  Create src/game_logic/entities/items.py with at minimum:
-          class Item:
-              x: int
-              y: int
-              points: int
-              is_super: bool
-        Or two subclasses: Pacgum(Item) and SuperPacgum(Item).
-        Update maze.py to return lists/sets of Item instances.
-        Update check_collision() and draw_pacgums/draw_super_pacgums accordingly.
-  Req:  "Player, Ghost, Items must be distinct classes"
-
-4.3 check_ghost_collision and check_collision are module-level functions, not
-    methods — this weakens the OOP design
-  Files: src/game_logic/entities/player.py (lines 145–173)
-  Fix:  Move check_ghost_collision() and check_collision() inside the Player
-        class as methods: player.check_ghost_collision(ghost_list) and
-        player.check_item_collision(items). This is not strictly required by
-        the subject but is implied by "distinct classes" with encapsulated logic.
 
 ==============================================================================
 5. SCORING — Ghost eating does not add points
@@ -260,54 +219,6 @@ Items marked [BLOCKING] will cause an evaluator to fail the project outright.
         them, remove the comment "should we hardcode it?" — it signals unfinished
         work to an evaluator.
 
-==============================================================================
-10. TYPE HINTS + DOCSTRINGS — flake8/mypy compliance
-==============================================================================
-
-10.1 Multiple functions use untyped list parameters
-  Files:
-    src/game_logic/entities/player.py, check_ghost_collision():
-      def check_ghost_collision(player: Player, ghosts: list) -> None:
-      Fix: Change to: ghosts: list[Ghost]  (import Ghost at top of file)
-
-    src/game_logic/entities/player.py, handle_input():
-      def handle_input(player: Player, events: list) -> None:
-      Fix: Change to: events: list[pygame.event.Event]
-
-    src/ui/screens/sub_screens.py, multiple update() methods:
-      def update(self, mouse_pos: tuple) -> None:
-      Fix: Change to: mouse_pos: tuple[int, int]
-
-    src/ui/screens/gameover.py, update():
-      def update(self, mouse_pos: tuple) -> None:
-      Fix: Same as above.
-
-    src/ui/screens/bottons.py, update() and draw() have no type hints at all.
-      Fix: Add full type hints.
-
-10.2 PEP 257 docstrings missing or malformed in several places
-  Files:
-    src/game_logic/entities/player.py — Player.__init__() has no docstring
-    src/game_logic/entities/player.py — update() docstring has typos ("mouvement")
-    src/game_logic/maze.py — Maze.__init__() has no docstring
-    src/ui/gameplay/maze_draw.py — draw_pacgums() docstring is too brief
-    src/ui/screens/sub_screens.py — HighscoreScreen class docstring says "mario = put content inside"
-                                    (left-over TODO note; replace with real docstring)
-    src/game_logic/game_engine.py — GameState enum docstring is a one-liner with wrong quote style
-  Fix:  Add/fix PEP 257 compliant docstrings. Use triple double-quotes. First
-        line is a short imperative summary. Multi-line: blank line before closing quotes.
-
-10.3 pac-man.py entry point has zero type hints and no module docstring
-  File: pac-man.py
-  Fix:  Add: """Entry point for the Pac-Man game.""" at top.
-        Add type hint to main(): def main() -> None:
-
-10.4 Makefile "lint-strict" target requires flake8 and mypy to be in
-     the project's dev dependencies — they are not listed in pyproject.toml
-  File: pyproject.toml
-  Fix:  Add a [dependency-groups] dev section:
-          [dependency-groups]
-          dev = ["flake8>=7.0", "mypy>=1.0"]
 
 ==============================================================================
 11. ERROR HANDLING / ROBUSTNESS
@@ -465,10 +376,6 @@ BLOCKING issues (will fail peer review): 16
   - 1.2 Levels 2+ not truly random seeded
   - 2.1 Missing debug Makefile target
   - 2.2 Missing clean Makefile target
-  - 2.3 Missing lint Makefile target
-  - 2.4 Missing lint-strict Makefile target
-  - 4.1 No MovingEntity base class
-  - 4.2 No Items class
   - 5.1 Eating ghost does not add points
   - 6.1 WASD not implemented
   - 7.1 No name-entry on Game Over
@@ -481,5 +388,4 @@ BLOCKING issues (will fail peer review): 16
   - 13.1 No packaging script
   - 13.2 No Itch.io/Steam deployment
 
-Non-blocking issues: sections 3, 9, 10, 11, 14
 ==============================================================================
