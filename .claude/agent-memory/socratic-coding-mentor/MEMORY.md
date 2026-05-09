@@ -1,2 +1,0 @@
-- [Pacman project current status (May 2026)](project_pacman_status.md) — What is implemented vs missing; 16 BLOCKING gaps identified in MARIO review on 2026-05-08
-- [Student profile — Anais (42 Pac-Man project)](user_profile.md) — 42 student, solid prototype but missing OOP structure and many spec requirements; near deadline
