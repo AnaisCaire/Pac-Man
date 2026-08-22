@@ -3,6 +3,16 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+# Local development/agent artifacts (never commit)
+/.hermes/
+/.harness/
+
+# Local subject/reference documents
+/docs/
+
+# OS metadata
+.DS_Store
+
 # C extensions
 *.so
 
