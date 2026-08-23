@@ -1,0 +1,11 @@
+[flake8]
+max-line-length = 88
+exclude =
+    .git,
+    .hermes,
+    .harness,
+    .mypy_cache,
+    .pytest_cache,
+    .venv,
+    __pycache__,
+    docs

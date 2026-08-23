@@ -1,15 +1,19 @@
-import os, json, logging
+import json
+import logging
+import os
 from dataclasses import dataclass, field
 from typing import List
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 @dataclass
 class LevelMazeSize:
     """ The maze size for one level"""
     width: int = 15
     height: int = 15
+
 
 @dataclass
 class Config:
@@ -27,6 +31,7 @@ class Config:
     points_per_ghost: int = 200
     seed: int = 42
     level_max_time: int = 90
+
 
 def validate_config(config: Config) -> Config:
     """ verify values """
@@ -68,6 +73,7 @@ for the '42' logo. Clamping to 15x15.")
             lvl.height = max(15, lvl.height)
     return config
 
+
 def parse_config(path: str) -> Config:
     """
     Parse the config
@@ -78,11 +84,11 @@ def parse_config(path: str) -> Config:
     try:
         with open(path, 'r') as f:
             content = "".join(line for line in f if not
-                            line.strip().startswith('#'))
+                              line.strip().startswith('#'))
             res_dict = json.loads(content)
             if 'level' in res_dict:
                 res_dict['level'] = [LevelMazeSize(**lvl) for lvl in res_dict['level']]
             return validate_config(config=Config(**res_dict))
-    except(json.JSONDecodeError, TypeError, KeyError) as e:
+    except (json.JSONDecodeError, TypeError, KeyError) as e:
         logger.error(f"Invalid config data in {path}: {e}. Clamping to defaults.")
         return Config()

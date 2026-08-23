@@ -8,7 +8,6 @@ BG_COLOR = (106, 159, 181)
 LOGO_MAX_WIDTH = 600
 
 
-
 class HighscoreScreen():
     """
     mario = put content inside
@@ -16,24 +15,24 @@ class HighscoreScreen():
 
     def __init__(self, screen_width: int, screen_height: int):
         # back button:
-        cx = screen_width // 2 # center it
-        by = screen_height - 150 # bottom
+        cx = screen_width // 2  # center it
+        by = screen_height - 150  # bottom
         self.back_btn = UIElement(center_position=(cx, by),
-                             text="Back",
-                             font_size=BUTTON_FONT_SIZE,
-                             action="back")
-    
+                                  text="Back",
+                                  font_size=BUTTON_FONT_SIZE,
+                                  action="back")
+
     def handle_event(self, event: pygame.event.Event) -> str | None:
         """ Use pygame event class to track if mouse on btn"""
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             if self.back_btn.rect.collidepoint(event.pos):
                 return self.back_btn.action
         return None
-    
+
     def update(self, mouse_pos: tuple[int, int]) -> None:
         """ update the mouse position"""
         self.back_btn.update(mouse_pos)
-    
+
     def draw(self, surface: pygame.Surface) -> None:
         """ add together """
         surface.fill(BG_COLOR)
@@ -44,18 +43,21 @@ class InstructionsScreen():
     """
     give instructions
     """
+
     def __init__(self, screen_width: int, screen_height: int):
         # back button:
-        cx = screen_width // 2 # center it
-        by = screen_height - 50 # bottom
+        cx = screen_width // 2  # center it
+        by = screen_height - 50  # bottom
         self.back_btn = UIElement(center_position=(cx, by),
-                             text="Back",
-                             font_size=BUTTON_FONT_SIZE,
-                             action="back")
+                                  text="Back",
+                                  font_size=BUTTON_FONT_SIZE,
+                                  action="back")
         # scale the image
-        raw_image = pygame.image.load(str(_IMAGES_DIR / "instructions.png")).convert_alpha()
+        raw_image = pygame.image.load(
+            str(_IMAGES_DIR / "instructions.png")).convert_alpha()
         max_h = by - 20  # don't overlap the back button
-        scale = min(screen_width / raw_image.get_width(), max_h / raw_image.get_height())
+        scale = min(screen_width / raw_image.get_width(),
+                    max_h / raw_image.get_height())
         img_w = int(raw_image.get_width() * scale)
         img_h = int(raw_image.get_height() * scale)
         self.image = pygame.transform.scale(raw_image, (img_w, img_h))
@@ -86,13 +88,15 @@ class PauseScreen():
 
     def __init__(self, screen_width: int, screen_height: int):
 
-         # load / scale  logo to fit
-        raw_logo = pygame.image.load(str(_IMAGES_DIR / "main_screen_logo.png")).convert_alpha()
+        # load / scale  logo to fit
+        raw_logo = pygame.image.load(
+            str(_IMAGES_DIR / "main_screen_logo.png")).convert_alpha()
         logo_scale = min(LOGO_MAX_WIDTH / raw_logo.get_width(), 1.0)
         logo_w = int(raw_logo.get_width() * logo_scale)
         logo_h = int(raw_logo.get_height() * logo_scale)
         self.logo = pygame.transform.scale(raw_logo, (logo_w, logo_h))
-        self.logo_rect = self.logo.get_rect(center=(screen_width // 2, logo_h // 2 + 20))
+        self.logo_rect = self.logo.get_rect(
+            center=(screen_width // 2, logo_h // 2 + 20))
 
         cx = screen_width // 2
         cy = screen_height // 2

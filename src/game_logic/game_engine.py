@@ -1,21 +1,35 @@
 import pygame
 import sys
 from enum import Enum
+from typing import cast
 
 from .config import Config
 from .maze import Maze
 from ..ui.screens.main_menu import MainMenu
 from ..ui.screens.gameover import GameOver
 from ..ui.screens.victory import VictoryScreen
-from ..ui.screens.sub_screens import HighscoreScreen, InstructionsScreen, PauseScreen
-from ..ui.gameplay import draw_maze, draw_player, draw_pacgums, draw_legend, draw_super_pacgums, draw_ghosts
+from ..ui.screens.sub_screens import (
+    HighscoreScreen,
+    InstructionsScreen,
+    PauseScreen,
+)
+from ..ui.gameplay import (
+    draw_ghosts,
+    draw_legend,
+    draw_maze,
+    draw_pacgums,
+    draw_player,
+    draw_super_pacgums,
+)
 from ..ui.music_manager import MusicManager
 from .entities.player import Player, handle_input
 from .entities.ghost_types import Blinky, Pinky, Inky, Clyde
+from .entities.ghosts import Ghost
 
 
 WINDOW_SIZE = 800
 HUB_HEIGHT = 100
+
 
 class GameState(Enum):
     " all the different states of the engine "
@@ -55,11 +69,12 @@ def _run_gameplay(screen: pygame.Surface, clock: pygame.time.Clock,
 
     ghost_positions = maze.place_ghosts()
     ghost_classes = [Blinky, Pinky, Inky, Clyde]
-    ghost_list = []
+    ghost_list: list[Ghost] = []
     for cls, pos in zip(ghost_classes, ghost_positions):
         x, y = pos
         ghost_list.append(cls(x, y, tile_size, player, start_time=level_start_time))
-    ghost_list[2].blinky = ghost_list[0]  # Inky needs Blinky
+    inky = cast(Inky, ghost_list[2])
+    inky.blinky = ghost_list[0]
 
     while True:
         current_time = pygame.time.get_ticks()
@@ -77,7 +92,11 @@ def _run_gameplay(screen: pygame.Surface, clock: pygame.time.Clock,
                         if pause_event.type == pygame.QUIT:
                             pygame.quit()
                             sys.exit()
-                        if pause_event.type == pygame.KEYDOWN and pause_event.key == pygame.K_ESCAPE:
+                        escape_pressed = (
+                            pause_event.type == pygame.KEYDOWN
+                            and pause_event.key == pygame.K_ESCAPE
+                        )
+                        if escape_pressed:
                             paused = False
                         action = pause_menu.handle_event(pause_event)
                         if action == "resume":
@@ -156,7 +175,6 @@ def game_loop(config: Config) -> None:
     gameover_menu = GameOver(WINDOW_SIZE, WINDOW_SIZE + HUB_HEIGHT)
     victory_menu = VictoryScreen(WINDOW_SIZE, WINDOW_SIZE + HUB_HEIGHT)
 
-
     while True:
         events = pygame.event.get()
         for event in events:
@@ -222,7 +240,6 @@ def game_loop(config: Config) -> None:
                 current_lives = config.lives
                 music.play("menu")
                 state = GameState.MAIN_MENU
-
 
         elif state == GameState.GAME_OVER:
             for event in events:

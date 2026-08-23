@@ -1,26 +1,30 @@
+import random
+from typing import cast
+
+from mazegenerator.mazegenerator import MazeGenerator
+
 from .config import LevelMazeSize
 from .entities.items import Pacgum, SuperPacgum
-from mazegenerator.mazegenerator import MazeGenerator
-import random
 
 WALL_BITS = {'N': 1, 'E': 2, 'S': 4, 'W': 8}
 
-class Maze():
+
+class Maze:
     """ Maze wrapper class """
 
     def __init__(self,
                  maze_size: LevelMazeSize,
                  seed: int):
         self.maze = MazeGenerator(size=(maze_size.width, maze_size.height),
-                             seed=seed,
-                             perfect=False)
-        self.grid = self.maze.maze
+                                  seed=seed,
+                                  perfect=False)
+        self.grid = cast(list[list[int]], self.maze.maze)
         self.width = len(self.grid[0])
         self.height = len(self.grid)
         self.corners = [(0, 0),
-                    (self.width - 1, 0),
-                    (0, self.height - 1),
-                    (self.width - 1, self.height - 1)]
+                        (self.width - 1, 0),
+                        (0, self.height - 1),
+                        (self.width - 1, self.height - 1)]
 
     def has_wall(self, x: int, y: int, direction: str) -> bool:
         """ Returns True if there is a wall
@@ -31,22 +35,23 @@ class Maze():
         """ Returns True if the cell is completely
         impassable (value 15, used for the '42' pattern) """
         return self.grid[y][x] == 15
-    
+
     def find_spawn(self) -> tuple[int, int]:
-        """ 
+        """
         go to center then scan to find next valid cell
-        manhattan technique: 
+        manhattan technique:
         1. for each radius check where cells == r
         2.abs(dx) + abs(dy) != r
         """
-        cx, cy =  self.width // 2, self.height // 2
-        for r in range(max( self.width,  self.height)):
+        cx, cy = self.width // 2, self.height // 2
+        for r in range(max(self.width, self.height)):
             for dx in range(-r, r + 1):
                 for dy in range(-r, r + 1):
                     if abs(dx) + abs(dy) != r:   # only the shell at distance r
                         continue
                     x, y = cx + dx, cy + dy
-                    if 0 <= x <  self.width and 0 <= y <  self.height and not self.is_wall(x, y):
+                    in_bounds = 0 <= x < self.width and 0 <= y < self.height
+                    if in_bounds and not self.is_wall(x, y):
                         return (x, y)
         return (cx, cy)
 
@@ -62,11 +67,14 @@ class Maze():
         return {(x, y): Pacgum(x, y, points_per_pacgum)
                 for (x, y) in random.sample(candidates, count)}
 
-    def place_super_pacgums(self, points_per_super: int) -> dict[tuple[int, int], SuperPacgum]:
+    def place_super_pacgums(
+        self,
+        points_per_super: int,
+    ) -> dict[tuple[int, int], SuperPacgum]:
         """ for the corners """
         return {(cx, cy): SuperPacgum(cx, cy, points_per_super)
                 for (cx, cy) in self.corners}
-    
+
     def _find_near_corner(self, cx: int, cy: int) -> tuple[int, int]:
         """
         Same Manhattan spiral as find_spawn but from corner.

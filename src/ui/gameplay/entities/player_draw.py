@@ -16,8 +16,10 @@ PLAYER_COLOR = (255, 255, 0)
 def draw_player(surface: pygame.Surface, player: Player, tile_size: int,
                 offset_x: int = 0, offset_y: int = 0) -> None:
     """Draw Pac-Man as an animated yellow wedge."""
-    px = offset_x + (player.grid_x + player.progress * player.current_direction[0]) * tile_size
-    py = offset_y + (player.grid_y + player.progress * player.current_direction[1]) * tile_size
+    px = offset_x + (player.grid_x + player.progress *
+                     player.current_direction[0]) * tile_size
+    py = offset_y + (player.grid_y + player.progress *
+                     player.current_direction[1]) * tile_size
     # shrink radius to 0 as death_progress goes from 0.0 → 1.0
     full_radius = tile_size // 2.5
     radius = int(full_radius * (1.0 - player.death_progress))
@@ -26,7 +28,8 @@ def draw_player(surface: pygame.Surface, player: Player, tile_size: int,
     center_x, center_y = int(px + tile_size // 2), int(py + tile_size // 2)
 
     facing_mouth = DIRECTION_ANGLES.get(player.current_direction, 0.0)
-    aperture = MAX_MOUTH_ANGLE * math.sin(player.progress * math.pi) if player.moving else 0.0
+    aperture = MAX_MOUTH_ANGLE * \
+        math.sin(player.progress * math.pi) if player.moving else 0.0
 
     start_angle = facing_mouth + aperture
     end_angle = facing_mouth + (2 * math.pi) - aperture
