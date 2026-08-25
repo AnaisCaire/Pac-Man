@@ -54,6 +54,8 @@ def draw_ghosts(surface: pygame.Surface, ghosts: list[Ghost], tile_size: int,
         raw = _pick_image(ghost)
         image = pygame.transform.scale(raw, (tile_size, tile_size))
 
-        px = offset_x + (ghost.grid_x + ghost.progress * ghost.current_direction[0]) * tile_size
-        py = offset_y + (ghost.grid_y + ghost.progress * ghost.current_direction[1]) * tile_size
+        px = offset_x + (ghost.grid_x + ghost.progress *
+                         ghost.current_direction[0]) * tile_size
+        py = offset_y + (ghost.grid_y + ghost.progress *
+                         ghost.current_direction[1]) * tile_size
         surface.blit(image, (int(px), int(py)))

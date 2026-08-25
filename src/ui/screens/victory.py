@@ -18,9 +18,11 @@ class VictoryScreen():
                                   text="Return to Main Menu",
                                   font_size=BUTTON_FONT_SIZE,
                                   action="main menu")
-        raw_image = pygame.image.load(str(_IMAGES_DIR / "victory_screen.png")).convert_alpha()
+        raw_image = pygame.image.load(
+            str(_IMAGES_DIR / "victory_screen.png")).convert_alpha()
         max_h = by - 20
-        scale = min(screen_width / raw_image.get_width(), max_h / raw_image.get_height())
+        scale = min(screen_width / raw_image.get_width(),
+                    max_h / raw_image.get_height())
         img_w = int(raw_image.get_width() * scale)
         img_h = int(raw_image.get_height() * scale)
         self.image = pygame.transform.scale(raw_image, (img_w, img_h))
@@ -32,7 +34,7 @@ class VictoryScreen():
                 return self.back_btn.action
         return None
 
-    def update(self, mouse_pos: tuple) -> None:
+    def update(self, mouse_pos: tuple[int, int]) -> None:
         self.back_btn.update(mouse_pos)
 
     def draw(self, surface: pygame.Surface) -> None:

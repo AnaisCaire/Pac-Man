@@ -12,7 +12,8 @@ def draw_legend(surface: pygame.Surface, font: pygame.font.Font,
 
     screen_width = surface.get_width()
 
-    pygame.draw.line(surface, LINE_COLOR, (0, hud_y_start), (screen_width, hud_y_start), 3)
+    pygame.draw.line(surface, LINE_COLOR, (0, hud_y_start),
+                     (screen_width, hud_y_start), 3)
 
     top_row_y = hud_y_start + 40
     bottom_row_y = hud_y_start + 90
@@ -25,11 +26,14 @@ def draw_legend(surface: pygame.Surface, font: pygame.font.Font,
     surface.blit(timer_text, timer_text.get_rect(center=(screen_width // 2, top_row_y)))
 
     lives_text = font.render(f"LIVES: {lives}", True, TEXT_COLOR)
-    surface.blit(lives_text, lives_text.get_rect(midright=(screen_width - 30, top_row_y)))
+    surface.blit(lives_text, lives_text.get_rect(
+        midright=(screen_width - 30, top_row_y)))
 
     level_text = font.render(f"LEVEL: {level_num}", True, TEXT_COLOR)
-    surface.blit(level_text, level_text.get_rect(center=(screen_width // 2, hud_y_start + 70)))
+    surface.blit(level_text, level_text.get_rect(
+        center=(screen_width // 2, hud_y_start + 70)))
 
     if is_powered_up:
         power_text = font.render("POWER PELLET ACTIVE!", True, POWER_COLOR)
-        surface.blit(power_text, power_text.get_rect(center=(screen_width // 2, bottom_row_y)))
+        surface.blit(power_text, power_text.get_rect(
+            center=(screen_width // 2, bottom_row_y)))

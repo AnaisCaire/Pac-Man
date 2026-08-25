@@ -32,8 +32,21 @@ class Inky(Ghost):
     """
     sprite = 'cyan'
 
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self,
+        start_grid_x: int,
+        start_grid_y: int,
+        tile_size: int,
+        player: Player,
+        start_time: int,
+    ) -> None:
+        super().__init__(
+            start_grid_x,
+            start_grid_y,
+            tile_size,
+            player,
+            start_time,
+        )
         # set after construction: inky.blinky = blinky_instance
         self.blinky: Ghost | None = None
 

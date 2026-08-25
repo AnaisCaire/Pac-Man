@@ -11,6 +11,7 @@ if TYPE_CHECKING:
 
 PLAYER_SPEED = 2.5
 
+
 class Player(Entity):
     """
     Represents the player entity in the maze.
@@ -159,6 +160,7 @@ class Player(Entity):
         elif pos in super_pacgums:
             self.score += super_pacgums.pop(pos).points
             self.activate_power_up()
+
 
 def handle_input(player: Player, events: list[pygame.event.Event]) -> None:
     for event in events:

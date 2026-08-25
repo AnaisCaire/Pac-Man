@@ -10,6 +10,7 @@ if TYPE_CHECKING:
 
 GHOST_SPEED = 1.5
 
+
 class GhostState(Enum):
     """
     The four operational states of a ghost.
@@ -61,7 +62,8 @@ class Ghost(Entity):
         """
         # Prevent 180-degree turns unless frightened
         if self.current_direction != (0, 0) and self.state != GhostState.FRIGHTENED:
-            opposite_direction = (-self.current_direction[0], -self.current_direction[1])
+            opposite_direction = (-self.current_direction[0], -
+                                  self.current_direction[1])
             if direction == opposite_direction:
                 return False
 
@@ -123,7 +125,8 @@ class Ghost(Entity):
     def _reverse_direction(self) -> None:
         """ Forces the ghost to instantly turn around. """
         if self.current_direction != (0, 0):
-            self.current_direction = (-self.current_direction[0], -self.current_direction[1])
+            self.current_direction = (
+                -self.current_direction[0], -self.current_direction[1])
             self.progress = 1.0 - self.progress
 
     def _manage_state_timers(self, current_time: int) -> None:
@@ -144,7 +147,7 @@ class Ghost(Entity):
         time_in_state = current_time - self.state_timer
 
         if self.state == GhostState.SCATTER:
-            if time_in_state > 7000: # should we hardcode it ?
+            if time_in_state > 7000:  # should we hardcode it ?
                 self.state = GhostState.CHASE
                 self.state_timer = current_time
                 self._reverse_direction()

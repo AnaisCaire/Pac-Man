@@ -1,5 +1,6 @@
-import pygame
 import pathlib
+
+import pygame
 
 _SOUNDS_DIR = pathlib.Path(__file__).parent / "sounds"
 
@@ -21,10 +22,10 @@ class MusicManager:
     """Handles background music switching between menu and gameplay."""
 
     def __init__(self) -> None:
-        self._current = None
+        self._current: str | None = None
 
     def play(self, name: str) -> None:
-        """Switch to the named track ('menu' or 'game'). No-op if already playing or file missing."""
+        """Switch tracks, doing nothing if active or unavailable."""
         if name == self._current:
             return
         path = _find_track(name)
