@@ -1,0 +1,96 @@
+# Pygame -> MLX equivalence matrix
+
+Issue: [P0] Audit Pygame API against MLX-equivalence constraint (#16)
+Subject reference: Pac-Man subject v1.5, Chapter IV ("MLX or similar" clause).
+
+MLX ground truth used below is the canonical header, not blog posts:
+https://github.com/42Paris/minilibx-linux/blob/master/mlx.h
+(cross-checked against https://harm-smits.github.io/42docs/libs/minilibx/prototypes.html)
+
+Legend:
+- GREEN: a direct MLX function/capability exists, call-for-call or via a trivial reshape.
+- AMBER: the capability is reachable in MLX, but only by writing our own helper on top of
+  MLX primitives (no ready-made MLX call). Bridgeable, must be built and tested.
+- RED: no MLX capability exists at all (classic MLX has nothing comparable). Requires an
+  explicit product decision, not a code substitution.
+
+## A. Window & display lifecycle
+
+| Pygame call | File:line | MLX equivalent | Verdict |
+|---|---|---|---|
+| `pygame.init()` / `pygame.quit()` | `game_engine.py:156,85,93,182,199` | `mlx_init()` (no bulk teardown call; window/image destroys are explicit) | GREEN |
+| `pygame.display.set_mode((w, h))` | `game_engine.py:159` | `mlx_new_window(mlx, size_x, size_y, title)` | GREEN (MLX windows are fixed-size at creation, matches our fixed `WINDOW_SIZE`) |
+| `pygame.display.set_caption(str)` | `game_engine.py:160` | title argument of `mlx_new_window` (title is set once, at creation, no later rename call in MLX) | AMBER (needs reordering: pass title at construction instead of after) |
+| `pygame.display.flip()` | `game_engine.py:108,151,260` | `mlx_put_image_to_window(mlx, win, img, x, y)` per frame | AMBER (MLX has no implicit backbuffer swap; you render into an off-screen `mlx_new_image` buffer via `mlx_get_data_addr` and blit it yourself) |
+
+## B. Event loop
+
+| Pygame call | File:line | MLX equivalent | Verdict |
+|---|---|---|---|
+| `pygame.event.get()` (poll queue, per frame) | `game_engine.py:81,91,179` | No poll queue in MLX. Input is callback-driven: `mlx_key_hook`, `mlx_mouse_hook`, `mlx_hook` (generic X event, e.g. close button), all pumped by `mlx_loop(mlx)` | AMBER (capability exists but the *architecture* is inverted: register hooks once, don't poll each frame) |
+| `event.type == pygame.QUIT` | `game_engine.py:85,93,182` | `mlx_hook` on a window-close/DestroyNotify event | GREEN |
+| `event.type == pygame.KEYDOWN`, `event.key == pygame.K_*` | `game_engine.py:87,97`; `player.py:167-174` | `mlx_key_hook(win, f, param)` delivers raw X11 keycodes, not named constants | AMBER (capability exists, but keycodes are platform-specific ints; needs our own keycode-name mapping table) |
+| `pygame.mouse.get_pos()` | `game_engine.py:106,201,209,217,249,257` | `mlx_mouse_get_pos(mlx, win, &x, &y)` | GREEN |
+
+## C. Asset loading (PNG + alpha)
+
+| Pygame call | File:line | MLX equivalent | Verdict |
+|---|---|---|---|
+| `pygame.image.load(path)` | `main_menu.py:26`, `sub_screens.py:56,92`, `gameover.py:24`, `victory.py:21`, `ghost_draw.py:17-30` | `mlx_xpm_file_to_image` (guaranteed, declared in canonical `mlx.h`) *or* `mlx_png_file_to_image` (advertised on the 42docs prototypes page but **absent from the official 42Paris `mlx.h`** — a fork/platform extension, not guaranteed) | AMBER/RED — needs an explicit format policy before touching assets. See decision below. |
+| `.convert_alpha()` (per-pixel alpha compositing on blit) | same files as above, plus `bottons.py:18` | **No equivalent anywhere in `mlx.h`.** `mlx_put_image_to_window` has no blending/alpha parameter. | RED |
+
+## D. Runtime scaling
+
+| Pygame call | File:line | MLX equivalent | Verdict |
+|---|---|---|---|
+| `pygame.transform.scale(img, (w, h))` | `main_menu.py:31`, `sub_screens.py:63,97`, `gameover.py:31`, `victory.py:28`, `ghost_draw.py:55` | **None.** No resize/scale function exists in `mlx.h`. | RED |
+
+## E. Fonts / text rendering
+
+| Pygame call | File:line | MLX equivalent | Verdict |
+|---|---|---|---|
+| `pygame.freetype.SysFont(...).render(...)` | `bottons.py:16-17` | `mlx_string_put(mlx, win, x, y, color, str)` — single fixed bitmap font, no size/bold/antialiasing control. `mlx_set_font` exists but is Linux-only and still just an X11 core font name, not a size/weight API. | RED (no TrueType-quality equivalent) |
+| `pygame.font.SysFont(None, 36).render(...)` | `game_engine.py:162`, `hud.py:21-38` | same as above | RED |
+
+## F. Drawing primitives
+
+| Pygame call | File:line | MLX equivalent | Verdict |
+|---|---|---|---|
+| `pygame.draw.rect/line/polygon/circle` | `maze_draw.py:18-75`, `hud.py:15`, `player_draw.py:43,51` | Only `mlx_pixel_put(mlx, win, x, y, color)` exists — a single-pixel primitive. No rect/line/circle/polygon calls anywhere in `mlx.h`. | AMBER (every primitive is reachable as a loop of `mlx_pixel_put` calls — nested loop for rect, Bresenham for line, midpoint algorithm for circle — but we would be writing and testing our own helpers, not calling a library function) |
+
+## G. Rect / hit-testing objects
+
+| Pygame call | File:line | MLX equivalent | Verdict |
+|---|---|---|---|
+| `pygame.Rect`, `surface.get_rect(...)`, `rect.collidepoint(...)` | `bottons.py:56,60`, `main_menu.py:32,52`, `sub_screens.py:64,98,28,68,116`, `gameover.py:32,36`, `victory.py:29,33` | N/A — this is plain point-in-rectangle arithmetic, not a rendering capability. MLX has no `Rect` type because it was never in scope for a graphics library. | GREEN, but flagged: this should be reimplemented as a small pygame-independent geometry helper regardless of the MLX decision, per the "keep geometry outside the graphics dependency" guardrail — hit-testing should not depend on `pygame.Rect`. |
+
+## H. Timing / frame limiting
+
+| Pygame call | File:line | MLX equivalent | Verdict |
+|---|---|---|---|
+| `pygame.time.Clock()` + `clock.tick(fps)` | `game_engine.py:161` (used for FPS cap) | **None.** No delay/clock/FPS-limiter symbol anywhere in `mlx.h`; frame pacing under MLX is entirely the caller's own responsibility (typically `mlx_loop_hook` + your own OS-clock timer). | RED |
+| `pygame.time.get_ticks()` | `game_engine.py:67,80,88,110`; `player.py:83,96,100,106,131,136` | Same gap — no MLX ticks function. | RED |
+
+**Separate compliance flag (independent of the Pygame/MLX decision):** `pygame.time.get_ticks()`
+is currently called directly inside `src/game_logic/entities/player.py` (domain/entity code) and
+`src/game_logic/game_engine.py`. That already violates this project's own architecture guardrail
+("no direct wall-clock/Pygame ticks in domain rules"), regardless of which graphics library wins.
+A project clock (`time.monotonic()`-based, injected, not imported) is required either way.
+
+## I. Mixer / audio
+
+| Pygame call | File:line | MLX equivalent | Verdict |
+|---|---|---|---|
+| `pygame.mixer.init()`, `pygame.mixer.music.load/play/stop` | `music_manager.py:35-42`, `game_engine.py:157` | **None.** Classic MLX has zero audio-related symbols. | RED — out of scope for the "graphics library" equivalence clause; MLX was never an audio API. Tracked against the parallel no-audio P0 issue, not resolved here. |
+
+## Summary counts
+
+| Verdict | Count | Categories |
+|---|---|---|
+| GREEN | 6 | window init, `set_mode`, QUIT event, mouse position, Rect/hit-testing (geometry, not a lib call) |
+| AMBER | 6 | caption timing, `flip`/backbuffer, event-loop architecture, keycodes, image format policy, drawing primitives |
+| RED | 6 | alpha compositing, runtime scaling, freetype text, `font.render`, Clock/tick, `get_ticks` |
+| OUT OF SCOPE | 1 | audio mixer (no graphics-library equivalence applies) |
+
+No RED item may remain unresolved in the final implementation per the issue's Definition of
+Done. See `../decisions/ADR-0001-pygame-vs-mlx-frontend.md` for the resolution of each one.
