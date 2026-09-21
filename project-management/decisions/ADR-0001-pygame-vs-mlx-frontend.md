@@ -1,8 +1,8 @@
 # ADR-0001: Frontend graphics library — keep Pygame, constrained to MLX-equivalent calls
 
-- Status: PROPOSED (needs team sign-off before issue #16 closes; audio carve-out needs
-  explicit agreement, see "Open question" below)
-- Date: 2026-09-21
+- Status: RED items implemented; ACCEPTANCE still pending team sign-off before issue #16
+  closes, specifically the audio carve-out (see "Open question" below)
+- Date: 2026-09-21 (matrix/ADR drafted); RED items replaced in `src/` same day
 - Issue: #16 — [P0] Audit Pygame API against MLX-equivalence constraint
 - Related: #10 (Harden UI and asset loading), #12 (Package, publish, and rehearse regeneration)
 
@@ -30,29 +30,41 @@ relied-upon function has an MLX equivalent. The full call-by-call audit is in
 equivalent.** Concretely:
 
 1. Every RED item is replaced by a small, tested, Pygame-agnostic helper that only performs what
-   an MLX-based implementation would also have to hand-roll:
-   - Drawing primitives (`pygame.draw.*`) -> our own rect/line/circle/polygon helpers built from
-     per-pixel writes, mirroring what a `mlx_pixel_put` loop would do. (Currently AMBER because a
-     substitute is straightforward; still gets its own helper module either way.)
-   - `pygame.transform.scale` -> no runtime scaling. Ship pre-scaled asset variants at the exact
-     tile sizes the game uses (asset policy decision, see below), matching the fact that MLX has
-     no resize call either.
-   - `pygame.freetype` / `pygame.font.render` -> decide and implement one bitmap-font/text
-     strategy that would also work against `mlx_string_put`'s constraints (fixed glyphs, single
-     color per draw), rather than depending on arbitrary TrueType rendering.
-   - `.convert_alpha()` -> replace real alpha-blend compositing with an explicit transparent
-     color-key convention on load, since neither MLX nor our own pixel-loop blit gets free alpha
-     blending.
-   - `pygame.time.Clock` / `pygame.time.get_ticks()` -> a project clock (`time.monotonic()`
-     based) owned outside the rendering layer and injected into anything that needs elapsed time,
-     including `game_logic/entities/player.py` and `game_engine.py`, which currently call
-     `pygame.time.get_ticks()` directly from domain code. This is required independent of this
-     ADR, per the project's own "no direct wall-clock/Pygame ticks in domain rules" guardrail.
-2. AMBER items (window caption timing, backbuffer flip ordering, event architecture, keycode
-   table, PNG vs. XPM) are left as Pygame calls as-is, since a real MLX port would need the exact
-   same shape of code (hooks instead of polling, a keycode table, a fixed-format image loader) —
-   the point is that our Pygame usage must already be written *as if* it were sitting on top of
-   MLX, so the mapping is mechanical, not hand-wavy, if a port is ever required.
+   an MLX-based implementation would also have to hand-roll, in `src/ui/gfx/` and
+   `src/game_logic/clock.py`:
+   - `pygame.transform.scale` -> `ui/gfx/raster.nearest_neighbor_scale`, a hand-written resize
+     over the raw pixel array. Pre-scaled static assets were considered instead, but `tile_size`
+     is computed at runtime from `config.json`'s level dimensions (`WINDOW_SIZE //
+     max(width, height)`), so there is no fixed set of sizes to bake ahead of time — the resize
+     has to happen in code either way. The result is cached per `(sprite, tile_size)` so it only
+     recomputes on a level change, not every frame.
+   - `.convert_alpha()` + Pygame's implicit blit blending -> `ui/gfx/raster.blit_to_surface` /
+     `composite_array`, which read/write RGBA pixel arrays directly (via `numpy` +
+     `pygame.surfarray`) and do the alpha math by hand — real per-pixel alpha blending, not a
+     color-key approximation, since the source PNGs already carry a genuine alpha channel and
+     numpy makes the honest version cheap enough to keep.
+   - `pygame.freetype` / `pygame.font.render` -> `ui/gfx/bitmap_font`, a hand-baked 5x7 glyph
+     table (A-Z, 0-9, space, `:`, `!`) rendered to a pixel array per string, mirroring the fixed,
+     size-less nature of `mlx_string_put`. Text is upper-cased; there is no lowercase glyph set.
+   - `pygame.time.Clock` / `pygame.time.get_ticks()` -> `game_logic.clock.ProjectClock`
+     (`time.monotonic()`-based), owned outside the rendering layer. `player.py`'s
+     `update_timers`, `respawn`, `activate_power_up`, and `check_item_collision` now take
+     `current_time: int` as an explicit parameter instead of reading a clock themselves — the
+     same convention `Ghost.update(current_time, maze)` already followed, and required
+     independent of this ADR by the project's own "no direct wall-clock/Pygame ticks in domain
+     rules" guardrail.
+   - Drawing primitives (`pygame.draw.*` — rect/line/circle/polygon) are **not** touched here:
+     the matrix classifies them AMBER, not RED (a substitute is reachable via `mlx_pixel_put`
+     loops, just not built yet), and replacing them isn't required by the Definition of Done.
+     Left for a future issue if ever needed.
+   - `numpy` is added as a dependency to make this pixel-buffer math vectorized rather than
+     Python-level per-pixel loops, since the maze/ghost render path runs every frame.
+2. Other AMBER items (window caption timing, backbuffer flip ordering, event-loop architecture,
+   keycode mapping, PNG vs. XPM asset format) are left as Pygame calls as-is, since a real MLX
+   port would need the exact same shape of code (hooks instead of polling, a keycode table, a
+   fixed-format image loader) — the point is that our Pygame usage must already be written *as
+   if* it were sitting on top of MLX, so the mapping is mechanical, not hand-wavy, if a port is
+   ever required.
 3. Audio stays behind `src/ui/music_manager.py` as an isolated adapter, explicitly justified as
    outside the graphics-library equivalence clause, pending the no-audio P0 issue's own decision.
 
@@ -71,12 +83,16 @@ equivalent.** Concretely:
 
 ## Consequences
 
-- New work: rect/line/circle/polygon pixel-loop helpers, a bitmap-font/text helper, a project
-  clock module, and a pre-scaled asset pipeline — each independently testable.
-- `player.py` and `game_engine.py` must stop importing time from Pygame directly; they take a
-  clock dependency instead.
-- Asset rework (issue #10) is blocked on the PNG/XPM + alpha + font + scaling policy decided
-  here — do not touch assets before this ADR is accepted.
+- New modules: `src/ui/gfx/raster.py` (scale + alpha composite), `src/ui/gfx/bitmap_font.py`
+  (text), `src/game_logic/clock.py` (project clock) — each independently testable, and `numpy`
+  added as a dependency.
+- Menu/HUD text visually changes from antialiased Courier to a blocky retro pixel font. This is
+  a real, visible product change, not just an internal refactor — flag it in review.
+- `player.py` no longer reads a wall clock itself; `game_engine.py` passes `current_time` down
+  explicitly, same as it already did for ghosts.
+- Asset rework (issue #10) is unblocked for the PNG/XPM question specifically (still AMBER,
+  unresolved — see the matrix); alpha/font/scaling policy is now settled and implemented, so
+  issue #10 does not need to redo this work, only decide the loader format.
 - Packaging (issue #12) does not need to bundle MLX or any MLX bindings.
 
 ## Open question requiring explicit team sign-off
@@ -89,8 +105,16 @@ no-audio P0 issue concludes before closing #16.
 ## Verification
 
 - [ ] Matrix in `../audits/pygame-mlx-api-matrix.md` peer-reviewed against cited MLX prototypes.
-- [ ] No RED item remains unresolved in `src/` (rect/line/circle/polygon, scaling, fonts, alpha,
-      clock/ticks all replaced by the helpers described above).
-- [ ] `player.py` / `game_engine.py` no longer call `pygame.time.get_ticks()` directly.
-- [ ] README summarizes this decision with a link to this ADR.
+- [x] No RED item remains unresolved in `src/`: scaling, alpha compositing, fonts, and
+      Clock/`get_ticks` are replaced by `src/ui/gfx/raster.py`, `src/ui/gfx/bitmap_font.py`, and
+      `src/game_logic/clock.py`. (Drawing primitives (`pygame.draw.*`) were classified AMBER, not
+      RED — a substitute is reachable but not required by the Definition of Done — and are left
+      as Pygame calls; revisit only if a real MLX port is ever undertaken.)
+- [x] `player.py` / `game_engine.py` no longer call `pygame.time.get_ticks()` directly; time is
+      passed as an explicit `current_time` parameter, matching `Ghost.update()`'s convention.
+- [x] `make lint` (flake8 + mypy strict) and `make test` pass with the replacements in place;
+      the full menu/HUD/gameplay render path was additionally smoke-tested headlessly
+      (SDL dummy driver) and visually inspected via screenshot.
+- [x] README summarizes this decision with a link to this ADR.
 - [ ] Audio carve-out confirmed against the no-audio P0 issue's outcome.
+- [ ] Matrix/ADR peer review by teammate — PR should stay in draft until this happens.

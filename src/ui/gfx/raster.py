@@ -42,7 +42,8 @@ def nearest_neighbor_scale(rgba: np.ndarray, width: int, height: int) -> np.ndar
     src_w, src_h = rgba.shape[0], rgba.shape[1]
     col_idx = np.clip((np.arange(width) * src_w) // width, 0, src_w - 1)
     row_idx = np.clip((np.arange(height) * src_h) // height, 0, src_h - 1)
-    return rgba[col_idx][:, row_idx]
+    scaled: np.ndarray = rgba[col_idx][:, row_idx]
+    return scaled
 
 
 def composite_array(dest: np.ndarray, src: np.ndarray, x: int, y: int) -> None:
@@ -65,13 +66,15 @@ def composite_array(dest: np.ndarray, src: np.ndarray, x: int, y: int) -> None:
     src_rgb = sub[:, :, :3].astype(np.float32)
     blended_rgb = src_rgb * alpha + dest_rgb * (1.0 - alpha)
     dest_alpha = dest_region[:, :, 3].astype(np.float32)
-    blended_alpha = sub[:, :, 3].astype(np.float32) + dest_alpha * (1.0 - alpha[:, :, 0])
+    src_alpha = sub[:, :, 3].astype(np.float32)
+    blended_alpha = src_alpha + dest_alpha * (1.0 - alpha[:, :, 0])
 
     dest[x0:x1, y0:y1, :3] = blended_rgb.astype(np.uint8)
     dest[x0:x1, y0:y1, 3] = np.clip(blended_alpha, 0, 255).astype(np.uint8)
 
 
-def blit_to_surface(surface: pygame.Surface, src: np.ndarray, pos: tuple[int, int]) -> None:
+def blit_to_surface(surface: pygame.Surface, src: np.ndarray,
+                    pos: tuple[int, int]) -> None:
     """Alpha-composite a (W, H, 4) RGBA array onto an opaque pygame Surface.
 
     Only touches the clipped destination region via `pygame.surfarray`'s
@@ -92,5 +95,6 @@ def blit_to_surface(surface: pygame.Surface, src: np.ndarray, pos: tuple[int, in
 
     dest_pixels = pygame.surfarray.pixels3d(surface)
     region = dest_pixels[x0:x1, y0:y1].astype(np.float32)
-    dest_pixels[x0:x1, y0:y1] = (src_rgb * alpha + region * (1.0 - alpha)).astype(np.uint8)
+    blended = src_rgb * alpha + region * (1.0 - alpha)
+    dest_pixels[x0:x1, y0:y1] = blended.astype(np.uint8)
     del dest_pixels

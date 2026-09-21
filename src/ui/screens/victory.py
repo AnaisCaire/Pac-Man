@@ -1,5 +1,6 @@
 import pygame
 from .bottons import UIElement
+from ..gfx import raster
 
 import pathlib
 _IMAGES_DIR = pathlib.Path(__file__).parent.parent / "images"
@@ -18,15 +19,15 @@ class VictoryScreen():
                                   text="Return to Main Menu",
                                   font_size=BUTTON_FONT_SIZE,
                                   action="main menu")
-        raw_image = pygame.image.load(
-            str(_IMAGES_DIR / "victory_screen.png")).convert_alpha()
+        raw_image = raster.load_rgba(str(_IMAGES_DIR / "victory_screen.png"))
         max_h = by - 20
-        scale = min(screen_width / raw_image.get_width(),
-                    max_h / raw_image.get_height())
-        img_w = int(raw_image.get_width() * scale)
-        img_h = int(raw_image.get_height() * scale)
-        self.image = pygame.transform.scale(raw_image, (img_w, img_h))
-        self.image_rect = self.image.get_rect(center=(cx, img_h // 2 + 10))
+        scale = min(screen_width / raw_image.shape[0],
+                    max_h / raw_image.shape[1])
+        img_w = int(raw_image.shape[0] * scale)
+        img_h = int(raw_image.shape[1] * scale)
+        self.image = raster.nearest_neighbor_scale(raw_image, img_w, img_h)
+        self.image_rect = pygame.Rect((0, 0), (img_w, img_h))
+        self.image_rect.center = (cx, img_h // 2 + 10)
 
     def handle_event(self, event: pygame.event.Event) -> str | None:
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
@@ -39,5 +40,5 @@ class VictoryScreen():
 
     def draw(self, surface: pygame.Surface) -> None:
         surface.fill(BG_COLOR)
-        surface.blit(self.image, self.image_rect)
+        raster.blit_to_surface(surface, self.image, self.image_rect.topleft)
         self.back_btn.draw(surface)

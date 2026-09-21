@@ -13,6 +13,8 @@ Legend:
   MLX primitives (no ready-made MLX call). Bridgeable, must be built and tested.
 - RED: no MLX capability exists at all (classic MLX has nothing comparable). Requires an
   explicit product decision, not a code substitution.
+- RESOLVED: a RED item that has since been replaced in `src/` by a pygame-agnostic helper,
+  per [`../decisions/ADR-0001-pygame-vs-mlx-frontend.md`](../decisions/ADR-0001-pygame-vs-mlx-frontend.md).
 
 ## A. Window & display lifecycle
 
@@ -37,20 +39,20 @@ Legend:
 | Pygame call | File:line | MLX equivalent | Verdict |
 |---|---|---|---|
 | `pygame.image.load(path)` | `main_menu.py:26`, `sub_screens.py:56,92`, `gameover.py:24`, `victory.py:21`, `ghost_draw.py:17-30` | `mlx_xpm_file_to_image` (guaranteed, declared in canonical `mlx.h`) *or* `mlx_png_file_to_image` (advertised on the 42docs prototypes page but **absent from the official 42Paris `mlx.h`** — a fork/platform extension, not guaranteed) | AMBER/RED — needs an explicit format policy before touching assets. See decision below. |
-| `.convert_alpha()` (per-pixel alpha compositing on blit) | same files as above, plus `bottons.py:18` | **No equivalent anywhere in `mlx.h`.** `mlx_put_image_to_window` has no blending/alpha parameter. | RED |
+| `.convert_alpha()` (per-pixel alpha compositing on blit) | same files as above, plus `bottons.py:18` | **No equivalent anywhere in `mlx.h`.** `mlx_put_image_to_window` has no blending/alpha parameter. | RESOLVED — `.convert_alpha()` removed; images are loaded as raw RGBA arrays (`ui/gfx/raster.load_rgba`) and composited by hand (`ui/gfx/raster.blit_to_surface` / `composite_array`), the same per-pixel work an MLX renderer would do via `mlx_get_data_addr`. |
 
 ## D. Runtime scaling
 
 | Pygame call | File:line | MLX equivalent | Verdict |
 |---|---|---|---|
-| `pygame.transform.scale(img, (w, h))` | `main_menu.py:31`, `sub_screens.py:63,97`, `gameover.py:31`, `victory.py:28`, `ghost_draw.py:55` | **None.** No resize/scale function exists in `mlx.h`. | RED |
+| `pygame.transform.scale(img, (w, h))` | `main_menu.py:31`, `sub_screens.py:63,97`, `gameover.py:31`, `victory.py:28`, `ghost_draw.py:55` | **None.** No resize/scale function exists in `mlx.h`. | RESOLVED — replaced with a hand-written nearest-neighbor resize on the raw pixel array (`ui/gfx/raster.nearest_neighbor_scale`). Ghost sprites (the only per-frame case, since `tile_size` varies with level size) are additionally cached per `(sprite, tile_size)` so the resize only recomputes on a level change, not every frame. |
 
 ## E. Fonts / text rendering
 
 | Pygame call | File:line | MLX equivalent | Verdict |
 |---|---|---|---|
-| `pygame.freetype.SysFont(...).render(...)` | `bottons.py:16-17` | `mlx_string_put(mlx, win, x, y, color, str)` — single fixed bitmap font, no size/bold/antialiasing control. `mlx_set_font` exists but is Linux-only and still just an X11 core font name, not a size/weight API. | RED (no TrueType-quality equivalent) |
-| `pygame.font.SysFont(None, 36).render(...)` | `game_engine.py:162`, `hud.py:21-38` | same as above | RED |
+| `pygame.freetype.SysFont(...).render(...)` | `bottons.py:16-17` | `mlx_string_put(mlx, win, x, y, color, str)` — single fixed bitmap font, no size/bold/antialiasing control. `mlx_set_font` exists but is Linux-only and still just an X11 core font name, not a size/weight API. | RESOLVED — replaced with a hand-baked 5x7 pixel font (`ui/gfx/bitmap_font`), covering only the characters the UI actually uses (A-Z, 0-9, space, `:`, `!`; text is upper-cased). Visual trade-off: menu/HUD text is now a blocky pixel font instead of antialiased Courier. |
+| `pygame.font.SysFont(None, 36).render(...)` | `game_engine.py:162`, `hud.py:21-38` | same as above | RESOLVED — same `ui/gfx/bitmap_font` helper; `hud.draw_legend` no longer takes a `pygame.font.Font` argument at all. |
 
 ## F. Drawing primitives
 
@@ -68,14 +70,15 @@ Legend:
 
 | Pygame call | File:line | MLX equivalent | Verdict |
 |---|---|---|---|
-| `pygame.time.Clock()` + `clock.tick(fps)` | `game_engine.py:161` (used for FPS cap) | **None.** No delay/clock/FPS-limiter symbol anywhere in `mlx.h`; frame pacing under MLX is entirely the caller's own responsibility (typically `mlx_loop_hook` + your own OS-clock timer). | RED |
-| `pygame.time.get_ticks()` | `game_engine.py:67,80,88,110`; `player.py:83,96,100,106,131,136` | Same gap — no MLX ticks function. | RED |
+| `pygame.time.Clock()` + `clock.tick(fps)` | `game_engine.py:161` (used for FPS cap) | **None.** No delay/clock/FPS-limiter symbol anywhere in `mlx.h`; frame pacing under MLX is entirely the caller's own responsibility (typically `mlx_loop_hook` + your own OS-clock timer). | RESOLVED — replaced by `game_logic.clock.ProjectClock`, a `time.monotonic()`-based clock with the same `tick(fps)` contract. |
+| `pygame.time.get_ticks()` | `game_engine.py:67,80,88,110`; `player.py:83,96,100,106,131,136` | Same gap — no MLX ticks function. | RESOLVED — replaced by `ProjectClock.get_ticks_ms()`. |
 
-**Separate compliance flag (independent of the Pygame/MLX decision):** `pygame.time.get_ticks()`
-is currently called directly inside `src/game_logic/entities/player.py` (domain/entity code) and
-`src/game_logic/game_engine.py`. That already violates this project's own architecture guardrail
-("no direct wall-clock/Pygame ticks in domain rules"), regardless of which graphics library wins.
-A project clock (`time.monotonic()`-based, injected, not imported) is required either way.
+**Separate compliance flag, now fixed as part of this resolution:** `pygame.time.get_ticks()`
+was called directly inside `src/game_logic/entities/player.py` (domain/entity code), violating
+this project's own architecture guardrail ("no direct wall-clock/Pygame ticks in domain rules").
+`Player.update_timers`, `.respawn`, `.activate_power_up` and `.check_item_collision` now take
+`current_time: int` as an explicit parameter instead of reading a clock themselves — the same
+convention `Ghost.update(current_time, maze)` already followed.
 
 ## I. Mixer / audio
 
@@ -89,8 +92,11 @@ A project clock (`time.monotonic()`-based, injected, not imported) is required e
 |---|---|---|
 | GREEN | 6 | window init, `set_mode`, QUIT event, mouse position, Rect/hit-testing (geometry, not a lib call) |
 | AMBER | 6 | caption timing, `flip`/backbuffer, event-loop architecture, keycodes, image format policy, drawing primitives |
-| RED | 6 | alpha compositing, runtime scaling, freetype text, `font.render`, Clock/tick, `get_ticks` |
+| RESOLVED (was RED) | 6 | alpha compositing, runtime scaling, freetype text, `font.render`, Clock/tick, `get_ticks` |
 | OUT OF SCOPE | 1 | audio mixer (no graphics-library equivalence applies) |
 
-No RED item may remain unresolved in the final implementation per the issue's Definition of
-Done. See `../decisions/ADR-0001-pygame-vs-mlx-frontend.md` for the resolution of each one.
+No RED item remains unresolved in `src/` — all six were replaced by the helpers in `src/ui/gfx/`
+and `src/game_logic/clock.py`, per the issue's Definition of Done. See
+`../decisions/ADR-0001-pygame-vs-mlx-frontend.md` for the reasoning behind each replacement.
+The only unresolved cell is the audio carve-out sign-off (out of scope here, tracked against the
+no-audio P0 issue).

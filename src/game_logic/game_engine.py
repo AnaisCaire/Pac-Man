@@ -3,6 +3,7 @@ import sys
 from enum import Enum
 from typing import cast
 
+from .clock import ProjectClock
 from .config import Config
 from .maze import Maze
 from ..ui.screens.main_menu import MainMenu
@@ -41,8 +42,8 @@ class GameState(Enum):
     INSTRUCT = 6
 
 
-def _run_gameplay(screen: pygame.Surface, clock: pygame.time.Clock,
-                  config: Config, font: pygame.font.Font,
+def _run_gameplay(screen: pygame.Surface, clock: ProjectClock,
+                  config: Config,
                   pause_menu: PauseScreen,
                   level_index: int,
                   initial_score: int,
@@ -64,7 +65,7 @@ def _run_gameplay(screen: pygame.Surface, clock: pygame.time.Clock,
     pacgums = maze.place_pacgums(spawn, config.pacgum, config.points_per_pacgum)
     super_pacgums = maze.place_super_pacgums(config.points_per_super_pacgum)
 
-    level_start_time = pygame.time.get_ticks()
+    level_start_time = clock.get_ticks_ms()
     total_pause_ms = 0
 
     ghost_positions = maze.place_ghosts()
@@ -77,7 +78,7 @@ def _run_gameplay(screen: pygame.Surface, clock: pygame.time.Clock,
     inky.blinky = ghost_list[0]
 
     while True:
-        current_time = pygame.time.get_ticks()
+        current_time = clock.get_ticks_ms()
         events = pygame.event.get()
         handle_input(player, events)
         for event in events:
@@ -85,7 +86,7 @@ def _run_gameplay(screen: pygame.Surface, clock: pygame.time.Clock,
                 pygame.quit()
                 sys.exit()
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                pause_start = pygame.time.get_ticks()
+                pause_start = clock.get_ticks_ms()
                 paused = True
                 while paused:
                     for pause_event in pygame.event.get():
@@ -107,7 +108,7 @@ def _run_gameplay(screen: pygame.Surface, clock: pygame.time.Clock,
                     pause_menu.draw(screen)
                     pygame.display.flip()
                     clock.tick(60)
-                total_pause_ms += pygame.time.get_ticks() - pause_start
+                total_pause_ms += clock.get_ticks_ms() - pause_start
 
         passed_secs = (current_time - level_start_time - total_pause_ms) // 1000
         time_left = max(0, config.level_max_time - passed_secs)
@@ -117,12 +118,12 @@ def _run_gameplay(screen: pygame.Surface, clock: pygame.time.Clock,
         if not player.is_dying:
             player.update(maze)
         was_powered_up = player.is_powered_up
-        player.check_item_collision(pacgums, super_pacgums)
+        player.check_item_collision(pacgums, super_pacgums, current_time)
         if player.is_powered_up and not was_powered_up:
             for ghost in ghost_list:
                 ghost.frighten(current_time)
         player.check_ghost_collision(ghost_list)
-        player.update_timers()
+        player.update_timers(current_time)
 
         if player.lives <= 0 and not player.is_alive and not player.is_dying:
             return (GameState.GAME_OVER, player.score, player.lives)
@@ -140,7 +141,6 @@ def _run_gameplay(screen: pygame.Surface, clock: pygame.time.Clock,
         draw_ghosts(screen, ghost_list, tile_size, offset_x, offset_y)
         draw_legend(
             surface=screen,
-            font=font,
             time_left=time_left,
             score=player.score,
             lives=player.lives,
@@ -158,8 +158,7 @@ def game_loop(config: Config) -> None:
 
     screen = pygame.display.set_mode((WINDOW_SIZE, WINDOW_SIZE + HUB_HEIGHT))
     pygame.display.set_caption("Pac-Man")
-    clock = pygame.time.Clock()
-    font = pygame.font.SysFont(None, 36)
+    clock = ProjectClock()
     music = MusicManager()
 
     # --- all the windows ------
@@ -219,7 +218,7 @@ def game_loop(config: Config) -> None:
 
         elif state == GameState.IN_GAME:
             next_state, current_score, current_lives = _run_gameplay(
-                screen, clock, config, font, pause_menu,
+                screen, clock, config, pause_menu,
                 level_index=current_level,
                 initial_score=current_score,
                 initial_lives=current_lives

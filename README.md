@@ -65,10 +65,13 @@ The assigned external maze-generator artifact is tracked unchanged as
   [`project-management/decisions/ADR-0001-pygame-vs-mlx-frontend.md`](project-management/decisions/ADR-0001-pygame-vs-mlx-frontend.md),
   backed by the full call-by-call matrix in
   [`project-management/audits/pygame-mlx-api-matrix.md`](project-management/audits/pygame-mlx-api-matrix.md).
-  Decision: keep Pygame, but every call with no MLX equivalent (alpha blending, runtime image
-  scaling, TrueType text, frame-limiting clock, wall-clock ticks) is replaced by a small tested
-  helper that assumes only MLX-shaped capabilities; the audio mixer is carved out as outside the
-  graphics-library equivalence clause pending the no-audio decision.
+  Decision: keep Pygame, but every call with no MLX equivalent is replaced by a small tested
+  helper that assumes only MLX-shaped capabilities. Implemented in `src/ui/gfx/` (image scaling,
+  alpha compositing, a hand-baked pixel font replacing TrueType text) and
+  `src/game_logic/clock.py` (a `time.monotonic()` project clock replacing `pygame.time.Clock`
+  and `pygame.time.get_ticks()`, including in `Player`, which previously read the wall clock
+  directly from domain code). The audio mixer is carved out as outside the graphics-library
+  equivalence clause pending the no-audio decision.
 
 ## Resources
 
