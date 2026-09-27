@@ -87,7 +87,7 @@ convention `Ghost.update(current_time, maze)` already followed.
 
 | Pygame call | File:line | MLX equivalent | Verdict |
 |---|---|---|---|
-| `pygame.mixer.init()`, `pygame.mixer.music.load/play/stop` | `music_manager.py:35-42`, `game_engine.py:157` | **None.** Classic MLX has zero audio-related symbols because it is a graphics library, not an audio API. | OUT OF SCOPE — audio is a separate non-graphics subsystem. Keep music/SFX via `pygame.mixer` when an audio device is available, isolated behind `music_manager.py` or an equivalent adapter, and track optional audio with graceful silent fallback in #15. |
+| `pygame.mixer.init()`, `pygame.mixer.music.load/play/stop` | `music_manager.py` | **None.** Classic MLX has zero audio-related symbols because it is a graphics library, not an audio API. | OUT OF SCOPE — audio is a separate non-graphics subsystem. Keep music/SFX via `pygame.mixer` when an audio device is available, isolated behind `music_manager.py`, with optional audio and graceful silent fallback implemented in #15. |
 
 ## Summary counts
 
@@ -104,5 +104,5 @@ non-equivalent Pygame APIs because the behavior moved into helpers in `src/ui/gf
 reasoning behind each replacement.
 
 Audio is not a RED graphics item to resolve by deletion or an MLX port. It is a separate
-non-graphics subsystem: keep music/SFX via `pygame.mixer` when available, and make #15 provide
-optional audio with graceful silent fallback when mixer init or asset playback fails.
+non-graphics subsystem: keep music/SFX via `pygame.mixer` when available, and use the #15
+optional-audio adapter to fall back to silence when mixer init or asset playback fails.

@@ -154,12 +154,11 @@ def _run_gameplay(screen: pygame.Surface, clock: ProjectClock,
 
 def game_loop(config: Config) -> None:
     pygame.init()
-    pygame.mixer.init()
 
     screen = pygame.display.set_mode((WINDOW_SIZE, WINDOW_SIZE + HUB_HEIGHT))
     pygame.display.set_caption("Pac-Man")
     clock = ProjectClock()
-    music = MusicManager()
+    music = MusicManager.initialize()
 
     # --- all the windows ------
     state = GameState.MAIN_MENU
