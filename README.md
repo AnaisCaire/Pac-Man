@@ -43,6 +43,12 @@ python3 pac-man.py --help
 Invalid argument counts print a concise usage error to standard error and exit
 without starting the game.
 
+Configuration files must use the `.json` extension. Blank lines and full-line
+comments whose first non-space character is `#` are allowed; `#` characters
+inside JSON strings are preserved. Unknown keys are ignored. Missing,
+unreadable, malformed, or unsafe values are reported clearly and recovered with
+safe defaults or clamps without discarding valid sibling settings.
+
 ## Development commands
 
 | Command | Purpose |

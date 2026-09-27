@@ -23,6 +23,8 @@ def main(argv: Sequence[str] | None = None) -> None:
     """Parse command-line arguments and start the game."""
     parser = build_parser()
     arguments = parser.parse_args(argv)
+    if not arguments.config_file.endswith(".json"):
+        parser.error("configuration file must end with .json")
 
     os.environ.setdefault("PYGAME_HIDE_SUPPORT_PROMPT", "1")
     from src import game_loop, parse_config

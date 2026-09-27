@@ -59,6 +59,14 @@ class CommandLineTests(unittest.TestCase):
         self.assertIn("usage: pac-man.py", result.stderr)
         self.assertNotIn("Traceback", result.stderr)
 
+    def test_non_json_configuration_path_is_a_clean_usage_error(self) -> None:
+        """The subject launch contract expects a JSON configuration file."""
+        result = self.run_cli("config.txt")
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("configuration file must end with .json", result.stderr)
+        self.assertNotIn("Traceback", result.stderr)
+
     def test_valid_argument_starts_the_game_with_parsed_configuration(self) -> None:
         """A valid positional path is passed through to the game loop."""
         namespace = runpy.run_path(str(ENTRY_POINT), run_name="pacman_cli")
