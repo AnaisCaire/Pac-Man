@@ -13,8 +13,11 @@ Legend:
   MLX primitives (no ready-made MLX call). Bridgeable, must be built and tested.
 - RED: no MLX capability exists at all (classic MLX has nothing comparable). Requires an
   explicit product decision, not a code substitution.
-- RESOLVED: a RED item that has since been replaced in `src/` by a pygame-agnostic helper,
+- RESOLVED: a previously RED graphics/frontend dependency that no longer relies on a
+  non-equivalent Pygame API because the behavior moved into project-owned code,
   per [`../decisions/ADR-0001-pygame-vs-mlx-frontend.md`](../decisions/ADR-0001-pygame-vs-mlx-frontend.md).
+- OUT OF SCOPE: not part of the graphics-library equivalence question. Audio is a separate
+  subsystem; it may keep using `pygame.mixer` behind an adapter when available.
 
 ## A. Window & display lifecycle
 
@@ -84,7 +87,7 @@ convention `Ghost.update(current_time, maze)` already followed.
 
 | Pygame call | File:line | MLX equivalent | Verdict |
 |---|---|---|---|
-| `pygame.mixer.init()`, `pygame.mixer.music.load/play/stop` | `music_manager.py:35-42`, `game_engine.py:157` | **None.** Classic MLX has zero audio-related symbols. | RED — out of scope for the "graphics library" equivalence clause; MLX was never an audio API. Tracked against the parallel no-audio P0 issue, not resolved here. |
+| `pygame.mixer.init()`, `pygame.mixer.music.load/play/stop` | `music_manager.py:35-42`, `game_engine.py:157` | **None.** Classic MLX has zero audio-related symbols because it is a graphics library, not an audio API. | OUT OF SCOPE — audio is a separate non-graphics subsystem. Keep music/SFX via `pygame.mixer` when an audio device is available, isolated behind `music_manager.py` or an equivalent adapter, and track optional audio with graceful silent fallback in #15. |
 
 ## Summary counts
 
@@ -95,8 +98,11 @@ convention `Ghost.update(current_time, maze)` already followed.
 | RESOLVED (was RED) | 6 | alpha compositing, runtime scaling, freetype text, `font.render`, Clock/tick, `get_ticks` |
 | OUT OF SCOPE | 1 | audio mixer (no graphics-library equivalence applies) |
 
-No RED item remains unresolved in `src/` — all six were replaced by the helpers in `src/ui/gfx/`
-and `src/game_logic/clock.py`, per the issue's Definition of Done. See
-`../decisions/ADR-0001-pygame-vs-mlx-frontend.md` for the reasoning behind each replacement.
-The only unresolved cell is the audio carve-out sign-off (out of scope here, tracked against the
-no-audio P0 issue).
+No unresolved RED graphics/frontend dependency remains in `src/` — all six no longer depend on
+non-equivalent Pygame APIs because the behavior moved into helpers in `src/ui/gfx/` and
+`src/game_logic/clock.py`. See `../decisions/ADR-0001-pygame-vs-mlx-frontend.md` for the
+reasoning behind each replacement.
+
+Audio is not a RED graphics item to resolve by deletion or an MLX port. It is a separate
+non-graphics subsystem: keep music/SFX via `pygame.mixer` when available, and make #15 provide
+optional audio with graceful silent fallback when mixer init or asset playback fails.

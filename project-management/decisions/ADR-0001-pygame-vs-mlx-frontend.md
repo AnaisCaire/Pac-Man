@@ -1,7 +1,8 @@
 # ADR-0001: Frontend graphics library — keep Pygame, constrained to MLX-equivalent calls
 
-- Status: RED items implemented; ACCEPTANCE still pending team sign-off before issue #16
-  closes, specifically the audio carve-out (see "Open question" below)
+- Status: RED graphics/frontend items implemented; ACCEPTANCE still pending team sign-off
+  before issue #16 closes, specifically the audio-as-separate-subsystem carve-out
+  (see "Open question" below)
 - Date: 2026-09-21 (matrix/ADR drafted); RED items replaced in `src/` same day
 - Issue: #16 — [P0] Audit Pygame API against MLX-equivalence constraint
 - Related: #10 (Harden UI and asset loading), #12 (Package, publish, and rehearse regeneration)
@@ -20,9 +21,10 @@ relied-upon function has an MLX equivalent. The full call-by-call audit is in
 - 6 categories with **no** MLX equivalent at all (RED): alpha-blended blitting, runtime image
   scaling, TrueType/freetype text rendering, `pygame.font` rendering, `pygame.time.Clock`
   frame limiting, and `pygame.time.get_ticks()`.
-- 1 category ruled out of scope: the audio mixer. Classic MLX has no audio API at all, so the
-  subject's graphics-library equivalence clause does not apply to it; it's tracked against the
-  parallel no-audio P0 issue instead of resolved here.
+- 1 category ruled out of scope for graphics equivalence: the audio mixer. Classic MLX has no
+  audio API at all because it is a graphics library, so the subject's graphics-library
+  equivalence clause does not apply to `pygame.mixer`. Audio remains a desired feature, tracked
+  as optional audio with graceful silent fallback in #15.
 
 ## Decision
 
@@ -65,8 +67,10 @@ equivalent.** Concretely:
    fixed-format image loader) — the point is that our Pygame usage must already be written *as
    if* it were sitting on top of MLX, so the mapping is mechanical, not hand-wavy, if a port is
    ever required.
-3. Audio stays behind `src/ui/music_manager.py` as an isolated adapter, explicitly justified as
-   outside the graphics-library equivalence clause, pending the no-audio P0 issue's own decision.
+3. Audio stays behind `src/ui/music_manager.py` as an isolated non-graphics adapter. Keep music
+   and sound effects via `pygame.mixer` when an audio device is available; #15 must make mixer
+   init/load/play failures degrade to a single clear warning and silent no-op behavior, not remove
+   audio or force a dummy backend.
 
 ## Why not a real MLX port
 
@@ -78,8 +82,10 @@ equivalent.** Concretely:
   not a call substitution — attempting it now would touch every screen class for no additional
   subject compliance, since the subject only requires *function-level equivalence*, not literal
   MLX usage.
-- The subject rule is satisfied once every retained call is either GREEN, or AMBER/RED-resolved
-  by a helper that only assumes MLX-shaped capabilities. That is achievable without a rewrite.
+- The subject rule is satisfied for graphics/frontend calls once every retained Pygame graphics
+  API is GREEN/AMBER-defensible, and every previously RED graphics behavior no longer depends on
+  a non-equivalent Pygame API because it moved into project-owned code. That is achievable without
+  a rewrite.
 
 ## Consequences
 
@@ -97,10 +103,13 @@ equivalent.** Concretely:
 
 ## Open question requiring explicit team sign-off
 
-**Audio.** Classic MLX has no mixer equivalent. This ADR proposes treating audio as out of scope
-for the graphics-equivalence clause rather than dropping it — but that argument needs to be one
-the team can make to an evaluator, not just asserted here. Confirm this against whatever the
-no-audio P0 issue concludes before closing #16.
+**Audio.** Classic MLX has no mixer equivalent because it is not an audio library. This ADR treats
+audio as a separate non-graphics subsystem rather than part of the Pygame -> MLX graphics
+equivalence matrix. That does **not** mean removing audio: keep `pygame.mixer` for music/SFX when
+available, isolated behind `src/ui/music_manager.py` or an equivalent adapter. Confirm this with
+#15 by implementing optional audio with graceful silent fallback: if mixer init, music loading, or
+playback fails, emit one clear warning, switch to no-op/silent behavior, and let menu/gameplay
+continue without a traceback.
 
 ## Verification
 
@@ -116,5 +125,6 @@ no-audio P0 issue concludes before closing #16.
       the full menu/HUD/gameplay render path was additionally smoke-tested headlessly
       (SDL dummy driver) and visually inspected via screenshot.
 - [x] README summarizes this decision with a link to this ADR.
-- [ ] Audio carve-out confirmed against the no-audio P0 issue's outcome.
+- [ ] Audio carve-out confirmed by #15 as optional audio with graceful silent fallback, not an
+      audio-removal policy.
 - [ ] Matrix/ADR peer review by teammate — PR should stay in draft until this happens.
