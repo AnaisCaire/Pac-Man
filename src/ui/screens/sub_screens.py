@@ -9,6 +9,21 @@ BG_COLOR = (106, 159, 181)
 LOGO_MAX_WIDTH = 600
 
 
+def _handle_button_click(event: pygame.event.Event,
+                         buttons: list[UIElement]) -> str | None:
+    """Return the action for the clicked button, if any."""
+    if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+        for button in buttons:
+            if button.rect.collidepoint(event.pos):
+                return button.action
+    return None
+
+
+# Original review note: I see 4 classes implementing the same method all over
+# again: handle_event, we should look around refactoring, maybe pattern?
+# Post-fix: shared the button-click lookup in a private helper; no class
+# hierarchy until screen behavior actually needs one.
+
 class HighscoreScreen():
     """
     mario = put content inside
@@ -25,10 +40,7 @@ class HighscoreScreen():
 
     def handle_event(self, event: pygame.event.Event) -> str | None:
         """ Use pygame event class to track if mouse on btn"""
-        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            if self.back_btn.rect.collidepoint(event.pos):
-                return self.back_btn.action
-        return None
+        return _handle_button_click(event, [self.back_btn])
 
     def update(self, mouse_pos: tuple[int, int]) -> None:
         """ update the mouse position"""
@@ -65,10 +77,7 @@ class InstructionsScreen():
         self.image_rect.center = (cx, img_h // 2 + 10)
 
     def handle_event(self, event: pygame.event.Event) -> str | None:
-        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            if self.back_btn.rect.collidepoint(event.pos):
-                return self.back_btn.action
-        return None
+        return _handle_button_click(event, [self.back_btn])
 
     def update(self, mouse_pos: tuple[int, int]) -> None:
         self.back_btn.update(mouse_pos)
@@ -111,11 +120,7 @@ class PauseScreen():
             self.buttons.append(btn)
 
     def handle_event(self, event: pygame.event.Event) -> str | None:
-        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            for button in self.buttons:
-                if button.rect.collidepoint(event.pos):
-                    return button.action
-        return None
+        return _handle_button_click(event, self.buttons)
 
     def update(self, mouse_pos: tuple[int, int]) -> None:
         for button in self.buttons:

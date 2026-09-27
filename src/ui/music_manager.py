@@ -5,6 +5,10 @@ import pygame
 
 _SOUNDS_DIR = pathlib.Path(__file__).parent / "sounds"
 
+# Original review note: check for more original-game audio so we can use it in
+# matching situations.
+# Post-fix: keep only menu/game tracks until matching assets and call sites are
+# added deliberately.
 _TRACKS = {
     "menu": ["menu.ogg", "menu.mp3", "menu.wav"],
     "game": ["game.ogg", "game.mp3", "game.wav"],

@@ -157,6 +157,9 @@ def game_loop(config: Config) -> None:
 
     screen = pygame.display.set_mode((WINDOW_SIZE, WINDOW_SIZE + HUB_HEIGHT))
     pygame.display.set_caption("Pac-Man")
+    # Original review note: set pygame.display.set_icon to change the window
+    # icon; Pac-Man with mouth open could work.
+    # Post-fix: deferred to #10 asset policy; no new icon asset in this cleanup.
     clock = ProjectClock()
     music = MusicManager.initialize()
 
@@ -222,6 +225,13 @@ def game_loop(config: Config) -> None:
                 initial_score=current_score,
                 initial_lives=current_lives
             )
+            # Original review note: winning a level should advance to the next
+            # level with the same lives and points.
+            # Post-fix: already true in this branch; no behavior change needed.
+            # Original review note: maybe add a "Next level: X" transition and
+            # its own music track.
+            # Post-fix: deferred; transition timing/music is UX scope, not this
+            # cleanup.
             if next_state == GameState.VICTORY:
                 current_level += 1
                 if current_level >= len(config.level):
@@ -229,9 +239,18 @@ def game_loop(config: Config) -> None:
                     state = GameState.VICTORY
                 else:
                     state = GameState.IN_GAME
+            # Original review note: game over needs an end track and username
+            # registration for highscores.
+            # Post-fix: deferred to highscore/audio content work; this cleanup
+            # keeps existing menu music behavior.
             elif next_state == GameState.GAME_OVER:
                 music.play("menu")
                 state = GameState.GAME_OVER
+            # Original review note: returning to menu could confirm progress
+            # loss with yes/no buttons.
+            # Post-fix: deferred; confirmation modal changes UX and input flow.
+            # Original review note: menu track may be okay here; check later.
+            # Post-fix: kept current menu track.
             elif next_state == GameState.MAIN_MENU:
                 current_level = 0
                 current_score = 0
@@ -239,6 +258,10 @@ def game_loop(config: Config) -> None:
                 music.play("menu")
                 state = GameState.MAIN_MENU
 
+        # Original review note: Game Over should register username for the
+        # highscore screen and change music.
+        # Post-fix: documented as follow-up; no highscore/audio content change
+        # in this cleanup.
         elif state == GameState.GAME_OVER:
             for event in events:
                 gameover_action = gameover_menu.handle_event(event)
@@ -247,6 +270,9 @@ def game_loop(config: Config) -> None:
             gameover_menu.update(pygame.mouse.get_pos())
             gameover_menu.draw(screen)
 
+        # Original review note: Victory needs the same transition/highscore
+        # cleanup mentioned from IN_GAME.
+        # Post-fix: documented as follow-up; no transition behavior added here.
         elif state == GameState.VICTORY:
             for event in events:
                 victory_action = victory_menu.handle_event(event)
