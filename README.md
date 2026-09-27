@@ -70,8 +70,9 @@ The assigned external maze-generator artifact is tracked unchanged as
   alpha compositing, a hand-baked pixel font replacing TrueType text) and
   `src/game_logic/clock.py` (a `time.monotonic()` project clock replacing `pygame.time.Clock`
   and `pygame.time.get_ticks()`, including in `Player`, which previously read the wall clock
-  directly from domain code). The audio mixer is carved out as outside the graphics-library
-  equivalence clause pending the no-audio decision.
+  directly from domain code). Audio is a separate non-graphics subsystem: `pygame.mixer` is kept
+  behind `src/ui/music_manager.py` when available, and gracefully falls back to silent no-op
+  behavior with one warning when mixer initialization or playback fails.
 
 ## Resources
 

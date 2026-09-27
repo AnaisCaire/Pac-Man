@@ -1,8 +1,7 @@
 # ADR-0001: Frontend graphics library — keep Pygame, constrained to MLX-equivalent calls
 
-- Status: RED graphics/frontend items implemented; ACCEPTANCE still pending team sign-off
-  before issue #16 closes, specifically the audio-as-separate-subsystem carve-out
-  (see "Open question" below)
+- Status: RED graphics/frontend items implemented; audio-as-separate-subsystem carve-out
+  implemented with optional audio and graceful silent fallback in #15.
 - Date: 2026-09-21 (matrix/ADR drafted); RED items replaced in `src/` same day
 - Issue: #16 — [P0] Audit Pygame API against MLX-equivalence constraint
 - Related: #10 (Harden UI and asset loading), #12 (Package, publish, and rehearse regeneration)
@@ -67,10 +66,10 @@ equivalent.** Concretely:
    fixed-format image loader) — the point is that our Pygame usage must already be written *as
    if* it were sitting on top of MLX, so the mapping is mechanical, not hand-wavy, if a port is
    ever required.
-3. Audio stays behind `src/ui/music_manager.py` as an isolated non-graphics adapter. Keep music
-   and sound effects via `pygame.mixer` when an audio device is available; #15 must make mixer
-   init/load/play failures degrade to a single clear warning and silent no-op behavior, not remove
-   audio or force a dummy backend.
+3. Audio stays behind `src/ui/music_manager.py` as an isolated non-graphics adapter. Music and
+   sound effects use `pygame.mixer` when an audio device is available; mixer init/load/play
+   failures degrade to a single clear warning and silent no-op behavior, without removing audio or
+   forcing a dummy backend.
 
 ## Why not a real MLX port
 
@@ -101,15 +100,14 @@ equivalent.** Concretely:
   issue #10 does not need to redo this work, only decide the loader format.
 - Packaging (issue #12) does not need to bundle MLX or any MLX bindings.
 
-## Open question requiring explicit team sign-off
+## Audio carve-out behavior
 
 **Audio.** Classic MLX has no mixer equivalent because it is not an audio library. This ADR treats
 audio as a separate non-graphics subsystem rather than part of the Pygame -> MLX graphics
 equivalence matrix. That does **not** mean removing audio: keep `pygame.mixer` for music/SFX when
-available, isolated behind `src/ui/music_manager.py` or an equivalent adapter. Confirm this with
-#15 by implementing optional audio with graceful silent fallback: if mixer init, music loading, or
-playback fails, emit one clear warning, switch to no-op/silent behavior, and let menu/gameplay
-continue without a traceback.
+available, isolated behind `src/ui/music_manager.py`. If mixer init, music loading, or playback
+fails, emit one clear warning, switch to no-op/silent behavior, and let menu/gameplay continue
+without a traceback.
 
 ## Verification
 
@@ -125,6 +123,6 @@ continue without a traceback.
       the full menu/HUD/gameplay render path was additionally smoke-tested headlessly
       (SDL dummy driver) and visually inspected via screenshot.
 - [x] README summarizes this decision with a link to this ADR.
-- [ ] Audio carve-out confirmed by #15 as optional audio with graceful silent fallback, not an
+- [x] Audio carve-out confirmed by #15 as optional audio with graceful silent fallback, not an
       audio-removal policy.
 - [ ] Matrix/ADR peer review by teammate — PR should stay in draft until this happens.
