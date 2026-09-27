@@ -1,4 +1,5 @@
 from .bottons import UIElement
+from ..gfx import raster
 import pygame
 import pathlib
 _IMAGES_DIR = pathlib.Path(__file__).parent.parent / "images"
@@ -53,15 +54,15 @@ class InstructionsScreen():
                                   font_size=BUTTON_FONT_SIZE,
                                   action="back")
         # scale the image
-        raw_image = pygame.image.load(
-            str(_IMAGES_DIR / "instructions.png")).convert_alpha()
+        raw_image = raster.load_rgba(str(_IMAGES_DIR / "instructions.png"))
         max_h = by - 20  # don't overlap the back button
-        scale = min(screen_width / raw_image.get_width(),
-                    max_h / raw_image.get_height())
-        img_w = int(raw_image.get_width() * scale)
-        img_h = int(raw_image.get_height() * scale)
-        self.image = pygame.transform.scale(raw_image, (img_w, img_h))
-        self.image_rect = self.image.get_rect(center=(cx, img_h // 2 + 10))
+        scale = min(screen_width / raw_image.shape[0],
+                    max_h / raw_image.shape[1])
+        img_w = int(raw_image.shape[0] * scale)
+        img_h = int(raw_image.shape[1] * scale)
+        self.image = raster.nearest_neighbor_scale(raw_image, img_w, img_h)
+        self.image_rect = pygame.Rect((0, 0), (img_w, img_h))
+        self.image_rect.center = (cx, img_h // 2 + 10)
 
     def handle_event(self, event: pygame.event.Event) -> str | None:
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
@@ -74,7 +75,7 @@ class InstructionsScreen():
 
     def draw(self, surface: pygame.Surface) -> None:
         surface.fill(BG_COLOR)
-        surface.blit(self.image, self.image_rect)
+        raster.blit_to_surface(surface, self.image, self.image_rect.topleft)
         self.back_btn.draw(surface)
 
 
@@ -89,14 +90,13 @@ class PauseScreen():
     def __init__(self, screen_width: int, screen_height: int):
 
         # load / scale  logo to fit
-        raw_logo = pygame.image.load(
-            str(_IMAGES_DIR / "main_screen_logo.png")).convert_alpha()
-        logo_scale = min(LOGO_MAX_WIDTH / raw_logo.get_width(), 1.0)
-        logo_w = int(raw_logo.get_width() * logo_scale)
-        logo_h = int(raw_logo.get_height() * logo_scale)
-        self.logo = pygame.transform.scale(raw_logo, (logo_w, logo_h))
-        self.logo_rect = self.logo.get_rect(
-            center=(screen_width // 2, logo_h // 2 + 20))
+        raw_logo = raster.load_rgba(str(_IMAGES_DIR / "main_screen_logo.png"))
+        logo_scale = min(LOGO_MAX_WIDTH / raw_logo.shape[0], 1.0)
+        logo_w = int(raw_logo.shape[0] * logo_scale)
+        logo_h = int(raw_logo.shape[1] * logo_scale)
+        self.logo = raster.nearest_neighbor_scale(raw_logo, logo_w, logo_h)
+        self.logo_rect = pygame.Rect((0, 0), (logo_w, logo_h))
+        self.logo_rect.center = (screen_width // 2, logo_h // 2 + 20)
 
         cx = screen_width // 2
         cy = screen_height // 2
@@ -123,6 +123,6 @@ class PauseScreen():
 
     def draw(self, surface: pygame.Surface) -> None:
         surface.fill(BG_COLOR)
-        surface.blit(self.logo, self.logo_rect)
+        raster.blit_to_surface(surface, self.logo, self.logo_rect.topleft)
         for button in self.buttons:
             button.draw(surface)

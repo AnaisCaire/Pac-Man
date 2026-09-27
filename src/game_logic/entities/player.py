@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Tuple
 from ..config import Config
 from .entity import Entity
 from .items import Pacgum, SuperPacgum
-import pygame
+import pygame  # only for pygame.event.Event / key constants in handle_input()
 
 if TYPE_CHECKING:
     from ..maze import Maze
@@ -77,10 +77,13 @@ class Player(Entity):
                 self.current_direction = self.next_direction
                 self.moving = True
 
-    def update_timers(self) -> None:
-        """Check if any active timers have expired."""
+    def update_timers(self, current_time: int) -> None:
+        """Check if any active timers have expired.
+
+        `current_time` is milliseconds from the caller's project clock —
+        this domain method never reads a wall clock itself.
+        """
         if self.is_powered_up:
-            current_time = pygame.time.get_ticks()
             if current_time - self.power_up_start_time >= self.power_up_duration:
                 self.is_powered_up = False
 
@@ -93,17 +96,15 @@ class Player(Entity):
                 self.is_dying = False
                 self.is_alive = False
                 self.lives -= 1
-                self.death_time = pygame.time.get_ticks()
+                self.death_time = current_time
 
         # respawn after delay if still has lives
         if not self.is_alive and self.lives > 0:
-            current_time = pygame.time.get_ticks()
             if current_time - self.death_time >= self.respawn_delay:
-                self.respawn()
+                self.respawn(current_time)
 
         # expire invincibility window
         if self.is_invincible:
-            current_time = pygame.time.get_ticks()
             if current_time - self.invincibility_start >= self.invincibility_duration:
                 self.is_invincible = False
 
@@ -115,7 +116,7 @@ class Player(Entity):
             self.moving = False
             self.current_direction = (0, 0)
 
-    def respawn(self) -> None:
+    def respawn(self, current_time: int) -> None:
         """Reset position and state back to the spawn tile."""
         self.grid_x = self.spawn_x
         self.grid_y = self.spawn_y
@@ -128,12 +129,12 @@ class Player(Entity):
         self.is_alive = True
         # grant brief invincibility so a ghost on the spawn tile can't kill instantly
         self.is_invincible = True
-        self.invincibility_start = pygame.time.get_ticks()
+        self.invincibility_start = current_time
 
-    def activate_power_up(self) -> None:
+    def activate_power_up(self, current_time: int) -> None:
         """Trigger the power-up state and record the exact time."""
         self.is_powered_up = True
-        self.power_up_start_time = pygame.time.get_ticks()
+        self.power_up_start_time = current_time
 
     def check_ghost_collision(self, ghosts: list[Ghost]) -> None:
         """Check if the player overlaps any ghost and react accordingly."""
@@ -150,7 +151,8 @@ class Player(Entity):
 
     def check_item_collision(self,
                              pacgums: dict[tuple[int, int], Pacgum],
-                             super_pacgums: dict[tuple[int, int], SuperPacgum]) -> None:
+                             super_pacgums: dict[tuple[int, int], SuperPacgum],
+                             current_time: int) -> None:
         """Remove pacgum or super pacgum if eaten and update score."""
         if self.progress < 0.01:
             return
@@ -159,7 +161,7 @@ class Player(Entity):
             self.score += pacgums.pop(pos).points
         elif pos in super_pacgums:
             self.score += super_pacgums.pop(pos).points
-            self.activate_power_up()
+            self.activate_power_up(current_time)
 
 
 def handle_input(player: Player, events: list[pygame.event.Event]) -> None:

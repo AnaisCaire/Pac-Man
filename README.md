@@ -59,6 +59,20 @@ The assigned external maze-generator artifact is tracked unchanged as
 `mazegenerator-2.0.1-py3-none-any.whl` (version 2.0.1). Its SHA-256 checksum is
 `f4b6828cd367570973bf901d90bbd6e5ae5cd4eb6d9cff18b1daa7b5c03599c3`.
 
+## Project management
+
+- Frontend library decision (Pygame vs. MLX-equivalence audit):
+  [`project-management/decisions/ADR-0001-pygame-vs-mlx-frontend.md`](project-management/decisions/ADR-0001-pygame-vs-mlx-frontend.md),
+  backed by the full call-by-call matrix in
+  [`project-management/audits/pygame-mlx-api-matrix.md`](project-management/audits/pygame-mlx-api-matrix.md).
+  Decision: keep Pygame, but every call with no MLX equivalent is replaced by a small tested
+  helper that assumes only MLX-shaped capabilities. Implemented in `src/ui/gfx/` (image scaling,
+  alpha compositing, a hand-baked pixel font replacing TrueType text) and
+  `src/game_logic/clock.py` (a `time.monotonic()` project clock replacing `pygame.time.Clock`
+  and `pygame.time.get_ticks()`, including in `Player`, which previously read the wall clock
+  directly from domain code). The audio mixer is carved out as outside the graphics-library
+  equivalence clause pending the no-audio decision.
+
 ## Resources
 
 - https://programmingpixels.com/handling-a-title-screen-game-flow-and-buttons-in-pygame.html

@@ -1,5 +1,6 @@
 import pygame
 from .bottons import UIElement
+from ..gfx import raster
 
 import pathlib
 _IMAGES_DIR = pathlib.Path(__file__).parent.parent / "images"
@@ -23,14 +24,13 @@ class MainMenu:
     def __init__(self, screen_width: int, screen_height: int):
 
         # load / scale  logo to fit
-        raw_logo = pygame.image.load(
-            str(_IMAGES_DIR / "main_screen_logo.png")).convert_alpha()
-        logo_scale = min(LOGO_MAX_WIDTH / raw_logo.get_width(), 1.0)
-        logo_w = int(raw_logo.get_width() * logo_scale)
-        logo_h = int(raw_logo.get_height() * logo_scale)
-        self.logo = pygame.transform.scale(raw_logo, (logo_w, logo_h))
-        self.logo_rect = self.logo.get_rect(
-            center=(screen_width // 2, logo_h // 2 + 20))
+        raw_logo = raster.load_rgba(str(_IMAGES_DIR / "main_screen_logo.png"))
+        logo_scale = min(LOGO_MAX_WIDTH / raw_logo.shape[0], 1.0)
+        logo_w = int(raw_logo.shape[0] * logo_scale)
+        logo_h = int(raw_logo.shape[1] * logo_scale)
+        self.logo = raster.nearest_neighbor_scale(raw_logo, logo_w, logo_h)
+        self.logo_rect = pygame.Rect((0, 0), (logo_w, logo_h))
+        self.logo_rect.center = (screen_width // 2, logo_h // 2 + 20)
 
         # create UIElement for buttons, evenly spaced below the logo
         cx = screen_width // 2
@@ -59,6 +59,6 @@ class MainMenu:
 
     def draw(self, surface: pygame.Surface) -> None:
         surface.fill(BG_COLOR)
-        surface.blit(self.logo, self.logo_rect)
+        raster.blit_to_surface(surface, self.logo, self.logo_rect.topleft)
         for button in self.buttons:
             button.draw(surface)
