@@ -1,27 +1,29 @@
 import json
 import logging
-import os
 from dataclasses import dataclass, field
-from typing import List
+from pathlib import Path
+from typing import Any
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+_MIN_LEVEL_SIZE = 15
+_MIN_LEVEL_TIME = 15
 
 
 @dataclass
 class LevelMazeSize:
-    """ The maze size for one level"""
+    """The maze size for one level."""
+
     width: int = 15
     height: int = 15
 
 
 @dataclass
 class Config:
-    """
-    all needed configuration values from config file
-    """
+    """All configuration values needed by the game."""
+
     highscore_filename: str = field(default="scores/high_scores.json")
-    level: List[LevelMazeSize] = field(
+    level: list[LevelMazeSize] = field(
         default_factory=lambda: [LevelMazeSize(width=15, height=15) for _ in range(10)]
     )
     lives: int = 3
@@ -33,62 +35,152 @@ class Config:
     level_max_time: int = 90
 
 
-def validate_config(config: Config) -> Config:
-    """ verify values """
+def _warning(field_name: str, message: str) -> None:
+    """Log one precise configuration recovery warning."""
+    logger.warning("%s: %s", field_name, message)
+
+
+def _strip_full_line_comments(text: str) -> str:
+    """Remove blank/comment lines without touching # inside JSON strings."""
+    return "".join(
+        line for line in text.splitlines(keepends=True)
+        if line.strip() and not line.lstrip().startswith("#")
+    )
+
+
+def _int_value(
+    raw: object,
+    default: int,
+    field_name: str,
+    minimum: int | None = None,
+) -> int:
+    """Return a safe integer; bools and wrong types fall back to default."""
+    if type(raw) is not int:
+        _warning(
+            field_name,
+            f"expected integer, got {type(raw).__name__}; using {default}",
+        )
+        return default
+    if minimum is not None and raw < minimum:
+        _warning(field_name, f"must be >= {minimum}, got {raw}; using {default}")
+        return default
+    return raw
+
+
+def _string_value(raw: object, default: str, field_name: str) -> str:
+    """Return a non-empty string, otherwise the default value."""
+    if not isinstance(raw, str) or not raw:
+        _warning(field_name, f"expected non-empty string; using {default}")
+        return default
+    return raw
+
+
+def _level_size(raw: object, index: int) -> LevelMazeSize:
+    """Normalize one level entry without invalidating its siblings."""
+    default = LevelMazeSize()
+    if not isinstance(raw, dict):
+        _warning(f"level[{index}]", "expected object; using 15x15")
+        return default
+
+    width = _int_value(
+        raw.get("width", default.width),
+        default.width,
+        f"level[{index}].width",
+    )
+    height = _int_value(
+        raw.get("height", default.height),
+        default.height,
+        f"level[{index}].height",
+    )
+    if width < _MIN_LEVEL_SIZE:
+        _warning(
+            f"level[{index}].width",
+            f"must be >= 15, got {width}; clamping to 15",
+        )
+        width = _MIN_LEVEL_SIZE
+    if height < _MIN_LEVEL_SIZE:
+        _warning(
+            f"level[{index}].height",
+            f"must be >= 15, got {height}; clamping to 15",
+        )
+        height = _MIN_LEVEL_SIZE
+    return LevelMazeSize(width=width, height=height)
+
+
+def _levels_value(raw: object, default: list[LevelMazeSize]) -> list[LevelMazeSize]:
+    """Normalize the level list while preserving each valid entry."""
+    if not isinstance(raw, list) or not raw:
+        _warning("level", "expected non-empty list; using default levels")
+        return default
+    return [_level_size(item, index) for index, item in enumerate(raw)]
+
+
+def _config_from_dict(data: dict[str, Any]) -> Config:
+    """Build a Config by validating each known key independently."""
     defaults = Config()
-    if config.lives < 1:
-        logger.error(f"lives must be >= 1 (got {config.lives}). \
-Clamping to {defaults.lives}.")
-        config.lives = defaults.lives
-
-    if config.level_max_time < 15:
-        logger.error(f"level_max_time must be >= 15 (got {config.level_max_time}). \
-Clamping to {defaults.level_max_time}.")
-        config.level_max_time = defaults.level_max_time
-
-    if config.points_per_pacgum < 0:
-        logger.error(f"points_per_pacgum cannot be negative. \
-Clamping to {defaults.points_per_pacgum}.")
-        config.points_per_pacgum = defaults.points_per_pacgum
-
-    if config.points_per_super_pacgum < 0:
-        logger.error(f"points_per_super_pacgum cannot be negative. \
-Clamping to {defaults.points_per_super_pacgum}.")
-        config.points_per_super_pacgum = defaults.points_per_super_pacgum
-
-    if config.points_per_ghost < 0:
-        logger.error(f"points_per_ghost cannot be negative. \
-Clamping to {defaults.points_per_ghost}.")
-        config.points_per_ghost = defaults.points_per_ghost
-
-    if not config.level or len(config.level) < 1:
-        logger.error("Game requires at least 1 level. Clamping to default level set.")
-        config.level = defaults.level
-
-    for i, lvl in enumerate(config.level):
-        if lvl.width < 15 or lvl.height < 15:
-            logger.error(f"Level {i} size ({lvl.width}x{lvl.height}) is too small \
-for the '42' logo. Clamping to 15x15.")
-            lvl.width = max(15, lvl.width)
-            lvl.height = max(15, lvl.height)
-    return config
+    return Config(
+        highscore_filename=_string_value(
+            data.get("highscore_filename", defaults.highscore_filename),
+            defaults.highscore_filename,
+            "highscore_filename",
+        ),
+        level=_levels_value(data.get("level", defaults.level), defaults.level),
+        lives=_int_value(data.get("lives", defaults.lives), defaults.lives, "lives", 1),
+        pacgum=_int_value(
+            data.get("pacgum", defaults.pacgum),
+            defaults.pacgum,
+            "pacgum",
+            0,
+        ),
+        points_per_pacgum=_int_value(
+            data.get("points_per_pacgum", defaults.points_per_pacgum),
+            defaults.points_per_pacgum,
+            "points_per_pacgum",
+            0,
+        ),
+        points_per_super_pacgum=_int_value(
+            data.get("points_per_super_pacgum", defaults.points_per_super_pacgum),
+            defaults.points_per_super_pacgum,
+            "points_per_super_pacgum",
+            0,
+        ),
+        points_per_ghost=_int_value(
+            data.get("points_per_ghost", defaults.points_per_ghost),
+            defaults.points_per_ghost,
+            "points_per_ghost",
+            0,
+        ),
+        seed=_int_value(data.get("seed", defaults.seed), defaults.seed, "seed"),
+        level_max_time=_int_value(
+            data.get("level_max_time", defaults.level_max_time),
+            defaults.level_max_time,
+            "level_max_time",
+            _MIN_LEVEL_TIME,
+        ),
+    )
 
 
 def parse_config(path: str) -> Config:
-    """
-    Parse the config
-    """
-    if not os.path.exists(path):
-        logger.error(f"Config file not found at {path}. Using default configuration.")
+    """Parse a commented JSON config file, recovering bad fields independently."""
+    config_path = Path(path)
+    if config_path.suffix != ".json":
+        logger.warning("config path must end with .json: %s; using defaults", path)
         return Config()
     try:
-        with open(path, 'r') as f:
-            content = "".join(line for line in f if not
-                              line.strip().startswith('#'))
-            res_dict = json.loads(content)
-            if 'level' in res_dict:
-                res_dict['level'] = [LevelMazeSize(**lvl) for lvl in res_dict['level']]
-            return validate_config(config=Config(**res_dict))
-    except (json.JSONDecodeError, TypeError, KeyError) as e:
-        logger.error(f"Invalid config data in {path}: {e}. Clamping to defaults.")
+        with config_path.open("r", encoding="utf-8") as config_file:
+            content = _strip_full_line_comments(config_file.read())
+        data = json.loads(content)
+    except FileNotFoundError:
+        logger.warning("config file not found: %s; using defaults", path)
         return Config()
+    except OSError as error:
+        logger.warning("cannot read config file %s: %s; using defaults", path, error)
+        return Config()
+    except json.JSONDecodeError as error:
+        logger.warning("invalid JSON in %s: %s; using defaults", path, error)
+        return Config()
+
+    if not isinstance(data, dict):
+        logger.warning("config root must be an object; using defaults")
+        return Config()
+    return _config_from_dict(data)
