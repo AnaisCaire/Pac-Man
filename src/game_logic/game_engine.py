@@ -1,4 +1,5 @@
 import pygame
+import random
 import sys
 from enum import Enum
 from typing import cast
@@ -42,10 +43,22 @@ class GameState(Enum):
     INSTRUCT = 6
 
 
+def select_level_seed(configured_seed: int,
+                      level_index: int,
+                      level_seed_rng: random.Random) -> int:
+    """Return the fixed first-level seed or an isolated random later seed."""
+    if level_index == 0:
+        return configured_seed
+    return level_seed_rng.randrange(0, 2 ** 31)
+
+
 def _run_gameplay(screen: pygame.Surface, clock: ProjectClock,
                   config: Config,
                   pause_menu: PauseScreen,
                   level_index: int,
+                  level_seed: int,
+                  placement_rng: random.Random,
+                  ghost_rng: random.Random,
                   initial_score: int,
                   initial_lives: int) -> tuple[GameState, int, int]:
     """
@@ -57,23 +70,34 @@ def _run_gameplay(screen: pygame.Surface, clock: ProjectClock,
     offset_x = (WINDOW_SIZE - tile_size * level_size.width) // 2
     offset_y = (WINDOW_SIZE - tile_size * level_size.height) // 2
 
-    maze = Maze(level_size, seed=config.seed + level_index)
+    maze = Maze(level_size, seed=level_seed)
     spawn = sx, sy = maze.find_spawn()
     player = Player(sx, sy, tile_size, config)
     player.score = initial_score
     player.lives = initial_lives
-    pacgums = maze.place_pacgums(spawn, config.pacgum, config.points_per_pacgum)
-    super_pacgums = maze.place_super_pacgums(config.points_per_super_pacgum)
+    super_pacgums = maze.place_super_pacgums(
+        config.points_per_super_pacgum,
+        spawn,
+    )
+    pacgums = maze.place_pacgums(
+        spawn,
+        config.pacgum,
+        config.points_per_pacgum,
+        placement_rng,
+        blocked=set(super_pacgums),
+    )
 
     level_start_time = clock.get_ticks_ms()
     total_pause_ms = 0
 
-    ghost_positions = maze.place_ghosts()
+    ghost_positions = maze.place_ghosts(spawn)
     ghost_classes = [Blinky, Pinky, Inky, Clyde]
     ghost_list: list[Ghost] = []
     for cls, pos in zip(ghost_classes, ghost_positions):
         x, y = pos
-        ghost_list.append(cls(x, y, tile_size, player, start_time=level_start_time))
+        ghost_list.append(cls(x, y, tile_size, player, level_start_time, ghost_rng))
+    for ghost in ghost_list:
+        ghost.home_positions = ghost_positions
     inky = cast(Inky, ghost_list[2])
     inky.blinky = ghost_list[0]
 
@@ -85,6 +109,8 @@ def _run_gameplay(screen: pygame.Surface, clock: ProjectClock,
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+            # Original review note: Maybe change track in "escape menu" too?
+            # Post-fix: deferred; pause-specific music is audio polish, not #4.
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 pause_start = clock.get_ticks_ms()
                 paused = True
@@ -102,6 +128,13 @@ def _run_gameplay(screen: pygame.Surface, clock: ProjectClock,
                         action = pause_menu.handle_event(pause_event)
                         if action == "resume":
                             paused = False
+                        # Original review note: returning to menu could
+                        # confirm progress loss with yes/no buttons.
+                        # Post-fix: deferred; confirmation modal changes UX
+                        # and input flow.
+                        # Original review note: menu track may be okay here;
+                        # check later.
+                        # Post-fix: kept current menu track.
                         elif action == "menu":
                             return (GameState.MAIN_MENU, player.score, player.lives)
                     pause_menu.update(pygame.mouse.get_pos())
@@ -168,6 +201,7 @@ def game_loop(config: Config) -> None:
     current_level = 0
     current_score = 0
     current_lives = config.lives
+    level_seed_rng = random.Random()
     music.play("menu")
     menu = MainMenu(WINDOW_SIZE, WINDOW_SIZE + HUB_HEIGHT)
     high_menu = HighscoreScreen(WINDOW_SIZE, WINDOW_SIZE + HUB_HEIGHT)
@@ -222,6 +256,13 @@ def game_loop(config: Config) -> None:
             next_state, current_score, current_lives = _run_gameplay(
                 screen, clock, config, pause_menu,
                 level_index=current_level,
+                level_seed=select_level_seed(
+                    config.seed,
+                    current_level,
+                    level_seed_rng,
+                ),
+                placement_rng=random.Random(),
+                ghost_rng=random.Random(),
                 initial_score=current_score,
                 initial_lives=current_lives
             )
@@ -234,9 +275,18 @@ def game_loop(config: Config) -> None:
             # cleanup.
             if next_state == GameState.VICTORY:
                 current_level += 1
+                # Original review note: this case is actually winning the
+                # whole game; change track before setting the state.
+                # Post-fix: deferred; winning-track work belongs to audio polish.
                 if current_level >= len(config.level):
+                    # Original review note: Maybe winning track?
+                    # Post-fix: deferred; no new track assets in #4.
                     music.play("menu")
                     state = GameState.VICTORY
+                # Original review note: This is going to the next level not
+                # state = GameState.IN_GAME, should load next level instead
+                # Post-fix: kept state transition; next loop loads next level
+                # with a fresh random seed via select_level_seed().
                 else:
                     state = GameState.IN_GAME
             # Original review note: game over needs an end track and username
@@ -246,11 +296,7 @@ def game_loop(config: Config) -> None:
             elif next_state == GameState.GAME_OVER:
                 music.play("menu")
                 state = GameState.GAME_OVER
-            # Original review note: returning to menu could confirm progress
-            # loss with yes/no buttons.
-            # Post-fix: deferred; confirmation modal changes UX and input flow.
-            # Original review note: menu track may be okay here; check later.
-            # Post-fix: kept current menu track.
+
             elif next_state == GameState.MAIN_MENU:
                 current_level = 0
                 current_score = 0
