@@ -172,24 +172,17 @@ class Maze:
                         return (x, y)
         raise MazeGenerationError("cannot place mandatory corner item")
 
-    def place_ghosts(
-        self,
-        spawn: tuple[int, int],
-        blocked: set[tuple[int, int]] | None = None,
-    ) -> list[tuple[int, int]]:
+    def place_ghosts(self, spawn: tuple[int, int]) -> list[tuple[int, int]]:
         """Place one ghost in each reachable corner region."""
         reachable = self._reachable_from(spawn)
         ghosts: list[tuple[int, int]] = []
-        blocked = set(blocked or ())
         for corner_x, corner_y in self.corners:
-            ghost = self._find_near_corner(
+            ghosts.append(self._find_near_corner(
                 corner_x,
                 corner_y,
                 reachable,
-                blocked | {spawn},
-            )
-            ghosts.append(ghost)
-            blocked.add(ghost)
+                {spawn},
+            ))
         if len(ghosts) != 4:
             raise MazeGenerationError("expected four ghost positions")
         return ghosts

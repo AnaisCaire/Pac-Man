@@ -9,6 +9,7 @@ if TYPE_CHECKING:
     from ..maze import Maze
 
 GHOST_SPEED = 1.5
+MIN_RESPAWN_DISTANCE = 5
 
 
 class GhostState(Enum):
@@ -41,6 +42,7 @@ class Ghost(Entity):
         self.speed: float = GHOST_SPEED
         self.home_x: int = start_grid_x
         self.home_y: int = start_grid_y
+        self.home_positions = [(start_grid_x, start_grid_y)]
         self.state: GhostState = GhostState.SCATTER
         self.state_timer: int = start_time
         self.player = player
@@ -219,6 +221,11 @@ class Ghost(Entity):
         Triggered when the ghost reaches the ghost house after being eaten.
         Resets position to home and state to standard SCATTER/CHASE.
         """
+        for home_x, home_y in self.home_positions:
+            if (abs(home_x - self.player.grid_x)
+                    + abs(home_y - self.player.grid_y) >= MIN_RESPAWN_DISTANCE):
+                self.home_x, self.home_y = home_x, home_y
+                break
         self.grid_x = self.home_x
         self.grid_y = self.home_y
         self.current_direction = (0, 0)

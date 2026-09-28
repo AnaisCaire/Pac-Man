@@ -90,12 +90,14 @@ def _run_gameplay(screen: pygame.Surface, clock: ProjectClock,
     level_start_time = clock.get_ticks_ms()
     total_pause_ms = 0
 
-    ghost_positions = maze.place_ghosts(spawn, blocked=set(super_pacgums))
+    ghost_positions = maze.place_ghosts(spawn)
     ghost_classes = [Blinky, Pinky, Inky, Clyde]
     ghost_list: list[Ghost] = []
     for cls, pos in zip(ghost_classes, ghost_positions):
         x, y = pos
         ghost_list.append(cls(x, y, tile_size, player, level_start_time, ghost_rng))
+    for ghost in ghost_list:
+        ghost.home_positions = ghost_positions
     inky = cast(Inky, ghost_list[2])
     inky.blinky = ghost_list[0]
 

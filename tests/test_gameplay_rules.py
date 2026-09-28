@@ -38,16 +38,29 @@ class GameplayRuleTests(unittest.TestCase):
         self.assertEqual(ghost.current_direction, (-1, 0))
         self.assertEqual(ghost.progress, 0.75)
 
-    def test_ghost_homes_do_not_overlap_super_pacgums(self) -> None:
+    def test_ghost_homes_can_overlap_super_pacgums(self) -> None:
         maze = Maze(LevelMazeSize(15, 15), 42)
         spawn = maze.find_spawn()
         super_pacgums = maze.place_super_pacgums(50, spawn)
 
-        ghosts = maze.place_ghosts(spawn, blocked=set(super_pacgums))
+        ghosts = maze.place_ghosts(spawn)
 
         self.assertEqual(len(ghosts), 4)
         self.assertEqual(len(set(ghosts)), 4)
-        self.assertTrue(set(ghosts).isdisjoint(super_pacgums))
+        self.assertEqual(set(ghosts), set(super_pacgums))
+
+    def test_respawn_uses_another_corner_when_home_is_too_close(self) -> None:
+        player = Player(0, 0, 16, Config())
+        ghost = Ghost(0, 0, 16, player, 0, random.Random(1))
+        ghost.home_positions = [(0, 0), (14, 0), (0, 14), (14, 14)]
+
+        ghost.respawn(100)
+
+        self.assertEqual((ghost.grid_x, ghost.grid_y), (14, 0))
+        self.assertGreaterEqual(
+            abs(ghost.grid_x - player.grid_x) + abs(ghost.grid_y - player.grid_y),
+            5,
+        )
 
 
 if __name__ == "__main__":
