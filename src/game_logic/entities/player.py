@@ -154,8 +154,6 @@ class Player(Entity):
                              super_pacgums: dict[tuple[int, int], SuperPacgum],
                              current_time: int) -> None:
         """Remove pacgum or super pacgum if eaten and update score."""
-        if self.progress < 0.01:
-            return
         pos = (self.grid_x, self.grid_y)
         if pos in pacgums:
             self.score += pacgums.pop(pos).points

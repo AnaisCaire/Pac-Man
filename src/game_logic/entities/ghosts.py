@@ -127,6 +127,8 @@ class Ghost(Entity):
     def _reverse_direction(self) -> None:
         """ Forces the ghost to instantly turn around. """
         if self.current_direction != (0, 0):
+            self.grid_x += self.current_direction[0]
+            self.grid_y += self.current_direction[1]
             self.current_direction = (
                 -self.current_direction[0], -self.current_direction[1])
             self.progress = 1.0 - self.progress
