@@ -22,6 +22,10 @@ def load_rgba(path: str) -> np.ndarray:
     pixel data pygame's PNG/XPM loader already decoded, not its blit-time
     blending behaviour.
     """
+    # Original review note: We should look up if we can use image.load and
+    # surfarray.array3d from pygame or we should reimplement those too.
+    # Post-fix: deferred to #10 asset-loading policy; #4 only needs the
+    # observation traced, not a graphics-loader rewrite.
     surface = pygame.image.load(path)
     rgb = pygame.surfarray.array3d(surface)
     try:

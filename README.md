@@ -65,6 +65,12 @@ The assigned external maze-generator artifact is tracked unchanged as
 `mazegenerator-2.0.1-py3-none-any.whl` (version 2.0.1). Its SHA-256 checksum is
 `f4b6828cd367570973bf901d90bbd6e5ae5cd4eb6d9cff18b1daa7b5c03599c3`.
 
+Maze generation is wrapped by `src/game_logic/maze.py`, which calls the package
+with `perfect=False`, validates generated grids before gameplay, and keeps the
+first level on the configured fixed seed. Later levels receive random seeds from
+an isolated level-seed RNG; pacgum placement and frightened ghost choices also
+use injected RNG sources instead of sharing module-global randomness.
+
 ## Project management
 
 - Frontend library decision (Pygame vs. MLX-equivalence audit):

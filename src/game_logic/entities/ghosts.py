@@ -35,7 +35,8 @@ class Ghost(Entity):
                  start_grid_y: int,
                  tile_size: int,
                  player: Player,
-                 start_time: int) -> None:
+                 start_time: int,
+                 rng: random.Random | None = None) -> None:
         super().__init__(start_grid_x, start_grid_y, tile_size)
         self.speed: float = GHOST_SPEED
         self.home_x: int = start_grid_x
@@ -43,6 +44,7 @@ class Ghost(Entity):
         self.state: GhostState = GhostState.SCATTER
         self.state_timer: int = start_time
         self.player = player
+        self.rng = rng or random.Random()
 
     # --------------------------
     #       helper functions
@@ -96,7 +98,7 @@ class Ghost(Entity):
 
         # Frightened: move randomly ?
         if self.state == GhostState.FRIGHTENED:
-            return random.choice(valid_directions)
+            return self.rng.choice(valid_directions)
 
         # Determine target tile based on state
         target_x, target_y = self.grid_x, self.grid_y
