@@ -1,5 +1,6 @@
 from .ghosts import Ghost
 from .player import Player
+import random
 
 
 class Blinky(Ghost):
@@ -39,6 +40,7 @@ class Inky(Ghost):
         tile_size: int,
         player: Player,
         start_time: int,
+        rng: random.Random | None = None,
     ) -> None:
         super().__init__(
             start_grid_x,
@@ -46,6 +48,7 @@ class Inky(Ghost):
             tile_size,
             player,
             start_time,
+            rng,
         )
         # set after construction: inky.blinky = blinky_instance
         self.blinky: Ghost | None = None

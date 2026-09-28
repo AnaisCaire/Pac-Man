@@ -9,6 +9,7 @@ from unittest.mock import patch
 from src.game_logic.config import LevelMazeSize
 from src.game_logic.config import Config
 from src.game_logic.entities.ghosts import Ghost, GhostState
+from src.game_logic.entities.ghost_types import Inky
 from src.game_logic.entities.player import Player
 from src.game_logic.game_engine import select_level_seed
 from src.game_logic.maze import Maze, MazeGenerationError, _generate_grid
@@ -144,6 +145,15 @@ class MazeAdapterTests(unittest.TestCase):
         second.state = GhostState.FRIGHTENED
 
         self.assertEqual(first._choose_direction(maze), second._choose_direction(maze))
+
+    def test_inky_accepts_the_gameplay_rng(self) -> None:
+        """Inky preserves Ghost's RNG constructor contract used by gameplay."""
+        player = Player(7, 7, 1, Config())
+        rng = random.Random(5)
+
+        inky = Inky(7, 7, 1, player, 0, rng)
+
+        self.assertIs(inky.rng, rng)
 
 
 if __name__ == "__main__":
