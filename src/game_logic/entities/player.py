@@ -37,6 +37,7 @@ class Player(Entity):
 
         self.lives: int = config.lives
         self.score: int = 0
+        self.points_per_ghost: int = config.points_per_ghost
         # --- handle state ----
         self.is_powered_up: bool = False
         self.power_up_start_time: int = 0
@@ -144,6 +145,7 @@ class Player(Entity):
         for ghost in ghosts:
             if ghost.grid_x == self.grid_x and ghost.grid_y == self.grid_y:
                 if ghost.is_frightened:
+                    self.score += self.points_per_ghost
                     ghost.die()
                 elif not ghost.is_dead:
                     self.start_death_animation()
@@ -160,6 +162,25 @@ class Player(Entity):
         elif pos in super_pacgums:
             self.score += super_pacgums.pop(pos).points
             self.activate_power_up(current_time)
+
+
+def resolve_collisions(
+    player: Player,
+    pacgums: dict[tuple[int, int], Pacgum],
+    super_pacgums: dict[tuple[int, int], SuperPacgum],
+    ghosts: list[Ghost],
+    current_time: int,
+) -> None:
+    """Resolve items before ghosts, so a same-tile super-pacgum wins."""
+    was_powered_up = player.is_powered_up
+    player.check_item_collision(pacgums, super_pacgums, current_time)
+    if player.is_powered_up and not was_powered_up:
+        for ghost in ghosts:
+            ghost.frighten(current_time, reverse=False)
+    player.check_ghost_collision(ghosts)
+    if player.is_powered_up and not was_powered_up:
+        for ghost in ghosts:
+            ghost.frighten(current_time)
 
 
 def handle_input(player: Player, events: list[pygame.event.Event]) -> None:
