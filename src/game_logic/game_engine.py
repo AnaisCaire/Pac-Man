@@ -1,3 +1,5 @@
+from collections.abc import Collection
+
 import pygame
 import random
 import sys
@@ -24,7 +26,7 @@ from ..ui.gameplay import (
     draw_super_pacgums,
 )
 from ..ui.music_manager import MusicManager
-from .entities.player import Player, handle_input
+from .entities.player import Player, handle_input, resolve_collisions
 from .entities.ghost_types import Blinky, Pinky, Inky, Clyde
 from .entities.ghosts import Ghost
 
@@ -50,6 +52,20 @@ def select_level_seed(configured_seed: int,
     if level_index == 0:
         return configured_seed
     return level_seed_rng.randrange(0, 2 ** 31)
+
+
+def terminal_state(
+    player: Player,
+    pacgums: Collection[object],
+    super_pacgums: Collection[object],
+    timed_out: bool = False,
+) -> GameState | None:
+    """Return the explicit timeout, defeat, or cleared-level outcome."""
+    if timed_out or (player.lives <= 0 and not player.is_alive and not player.is_dying):
+        return GameState.GAME_OVER
+    if player.is_alive and not player.is_dying and not pacgums and not super_pacgums:
+        return GameState.VICTORY
+    return None
 
 
 def _run_gameplay(screen: pygame.Surface, clock: ProjectClock,
@@ -145,23 +161,28 @@ def _run_gameplay(screen: pygame.Surface, clock: ProjectClock,
 
         passed_secs = (current_time - level_start_time - total_pause_ms) // 1000
         time_left = max(0, config.level_max_time - passed_secs)
-        if time_left == 0:
+        if terminal_state(
+            player,
+            pacgums,
+            super_pacgums,
+            timed_out=time_left == 0,
+        ) is GameState.GAME_OVER:
             return (GameState.GAME_OVER, player.score, player.lives)
 
         if not player.is_dying:
             player.update(maze)
-        was_powered_up = player.is_powered_up
-        player.check_item_collision(pacgums, super_pacgums, current_time)
-        if player.is_powered_up and not was_powered_up:
-            for ghost in ghost_list:
-                ghost.frighten(current_time)
-        player.check_ghost_collision(ghost_list)
+        resolve_collisions(
+            player,
+            pacgums,
+            super_pacgums,
+            ghost_list,
+            current_time,
+        )
         player.update_timers(current_time)
 
-        if player.lives <= 0 and not player.is_alive and not player.is_dying:
-            return (GameState.GAME_OVER, player.score, player.lives)
-        if not pacgums and not super_pacgums:
-            return (GameState.VICTORY, player.score, player.lives)
+        outcome = terminal_state(player, pacgums, super_pacgums)
+        if outcome is not None:
+            return (outcome, player.score, player.lives)
 
         for ghost in ghost_list:
             ghost.update(current_time, maze)

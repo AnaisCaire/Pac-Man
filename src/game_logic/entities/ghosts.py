@@ -207,14 +207,14 @@ class Ghost(Entity):
         self.state = GhostState.DEAD
         self.current_direction = (0, 0)
 
-    def frighten(self, current_time: int) -> None:
-        """
-        Triggered when the player eats a Super Pacgum.
-        Changes state to FRIGHTENED and reverses current direction.
-        """
+    def frighten(self, current_time: int, reverse: bool = True) -> None:
+        """Make a live ghost frightened, optionally reversing its direction."""
+        if self.is_dead:
+            return
         self.state = GhostState.FRIGHTENED
         self.state_timer = current_time
-        self._reverse_direction()
+        if reverse:
+            self._reverse_direction()
 
     def respawn(self, current_time: int) -> None:
         """
