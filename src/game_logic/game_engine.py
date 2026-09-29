@@ -68,6 +68,31 @@ class GameSession:
         self.lives = config.lives
 
 
+@dataclass
+class LevelTimer:
+    """Level elapsed time, excluding a player's death-to-respawn transition."""
+
+    start_time: int
+    paused_at: int | None = None
+    paused_ms: int = 0
+
+    def pause(self, current_time: int) -> None:
+        """Stop the level countdown once without stopping respawn processing."""
+        if self.paused_at is None:
+            self.paused_at = current_time
+
+    def resume(self, current_time: int) -> None:
+        """Resume the level countdown after the player has respawned."""
+        if self.paused_at is not None:
+            self.paused_ms += current_time - self.paused_at
+            self.paused_at = None
+
+    def elapsed_ms(self, current_time: int) -> int:
+        """Return elapsed level time excluding a current or completed pause."""
+        end_time = self.paused_at if self.paused_at is not None else current_time
+        return end_time - self.start_time - self.paused_ms
+
+
 def transition_session(
     session: GameSession,
     outcome: GameState,
@@ -140,14 +165,15 @@ def _run_gameplay(screen: pygame.Surface, clock: ProjectClock,
         blocked=set(super_pacgums),
     )
 
-    level_start_time = clock.get_ticks_ms()
+    simulation_start = clock.get_ticks_ms()
+    level_timer = LevelTimer(simulation_start)
 
     ghost_positions = maze.place_ghosts(spawn)
     ghost_classes = [Blinky, Pinky, Inky, Clyde]
     ghost_list: list[Ghost] = []
     for cls, pos in zip(ghost_classes, ghost_positions):
         x, y = pos
-        ghost_list.append(cls(x, y, tile_size, player, level_start_time, ghost_rng))
+        ghost_list.append(cls(x, y, tile_size, player, simulation_start, ghost_rng))
     for ghost in ghost_list:
         ghost.home_positions = ghost_positions
     inky = cast(Inky, ghost_list[2])
@@ -176,18 +202,17 @@ def _run_gameplay(screen: pygame.Surface, clock: ProjectClock,
                             and pause_event.key == pygame.K_ESCAPE
                         )
                         if escape_pressed:
+                            pause_menu.cancel_confirmation()
                             paused = False
                         action = pause_menu.handle_event(pause_event)
                         if action == "resume":
+                            pause_menu.cancel_confirmation()
                             paused = False
-                        # Original review note: returning to menu could
-                        # confirm progress loss with yes/no buttons.
-                        # Post-fix: deferred; confirmation modal changes UX
-                        # and input flow.
                         # Original review note: menu track may be okay here;
                         # check later.
                         # Post-fix: kept current menu track.
                         elif action == "menu":
+                            pause_menu.cancel_confirmation()
                             clock.resume()
                             return (GameState.MAIN_MENU, player.score, player.lives)
                     pause_menu.update(pygame.mouse.get_pos())
@@ -197,7 +222,11 @@ def _run_gameplay(screen: pygame.Surface, clock: ProjectClock,
                 clock.resume()
 
         current_time = clock.get_ticks_ms()
-        passed_secs = (current_time - level_start_time) // 1000
+        if player.is_dying or (not player.is_alive and player.lives > 0):
+            level_timer.pause(current_time)
+        else:
+            level_timer.resume(current_time)
+        passed_secs = level_timer.elapsed_ms(current_time) // 1000
         time_left = max(0, config.level_max_time - passed_secs)
         if terminal_state(
             player,
@@ -216,7 +245,11 @@ def _run_gameplay(screen: pygame.Surface, clock: ProjectClock,
             ghost_list,
             current_time,
         )
+        if player.is_dying:
+            level_timer.pause(current_time)
         player.update_timers(current_time)
+        if player.is_alive:
+            level_timer.resume(current_time)
 
         outcome = terminal_state(player, pacgums, super_pacgums)
         if outcome is not None:

@@ -61,12 +61,16 @@ safe defaults or clamps without discarding valid sibling settings.
 
 ## Gameplay progression and controls
 
-- Use the arrow keys to move Pac-Man in the four required directions.
+- Use either the arrow keys or W/A/S/D to move Pac-Man in the four required
+  directions. Both schemes set the same queued direction, so pressing their
+  matching keys together never doubles movement.
 - Press `Escape` during a level to pause. Resume continues the same session;
-  Return to Menu discards it and the next game starts with level 1, score 0,
-  and the configured lives.
+  Return to Menu asks for confirmation before discarding it. The next game
+  starts with level 1, score 0, and the configured lives.
 - The level timer, power-pellet, player respawn/invincibility, and ghost state
   timers all use simulation time and do not advance while paused.
+- A lethal collision also pauses only the level countdown until the player
+  respawns; death animation and respawn processing continue normally.
 - Reaching the time limit ends the current game in Game Over. Timeout takes
   priority over same-frame gameplay actions.
 - Completing a level keeps score and remaining lives. Completing the tenth

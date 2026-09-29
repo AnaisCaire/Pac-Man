@@ -209,18 +209,28 @@ class GameplayRuleTests(unittest.TestCase):
             5,
         )
 
-    def test_arrow_keys_map_to_the_four_required_directions(self) -> None:
+    def test_arrow_and_wasd_keys_map_to_the_four_directions(self) -> None:
         player = Player(1, 1, 16, Config())
         expected = {
             pygame.K_UP: (0, -1),
             pygame.K_DOWN: (0, 1),
             pygame.K_LEFT: (-1, 0),
             pygame.K_RIGHT: (1, 0),
+            pygame.K_w: (0, -1),
+            pygame.K_s: (0, 1),
+            pygame.K_a: (-1, 0),
+            pygame.K_d: (1, 0),
         }
 
         for key, direction in expected.items():
             handle_input(player, [pygame.event.Event(pygame.KEYDOWN, key=key)])
             self.assertEqual(player.next_direction, direction)
+
+        handle_input(player, [
+            pygame.event.Event(pygame.KEYDOWN, key=pygame.K_w),
+            pygame.event.Event(pygame.KEYDOWN, key=pygame.K_UP),
+        ])
+        self.assertEqual(player.next_direction, (0, -1))
 
 
 if __name__ == "__main__":

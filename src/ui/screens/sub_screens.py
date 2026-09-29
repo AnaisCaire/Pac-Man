@@ -95,6 +95,10 @@ class PauseScreen():
         "Resume":            "resume",
         "Return to Menu":    "menu",
     }
+    CONFIRM_ACTIONS = {
+        "Keep Playing":       "cancel_menu",
+        "Discard Game":       "confirm_menu",
+    }
 
     def __init__(self, screen_width: int, screen_height: int):
 
@@ -107,20 +111,42 @@ class PauseScreen():
         self.logo_rect = pygame.Rect((0, 0), (logo_w, logo_h))
         self.logo_rect.center = (screen_width // 2, logo_h // 2 + 20)
 
-        cx = screen_width // 2
-        cy = screen_height // 2
+        self.cx = screen_width // 2
+        self.cy = screen_height // 2
+        self.confirming_exit = False
+        self.buttons: list[UIElement] = []
+        self._set_actions(self.ACTIONS)
+
+    def _set_actions(self, actions: dict[str, str]) -> None:
+        """Show one small action set without a separate modal framework."""
         spacing = BUTTON_FONT_SIZE + 30
         self.buttons = []
-        for i, (label, action) in enumerate(self.ACTIONS.items()):
-            offset = (i - (len(self.ACTIONS) - 1) / 2) * spacing
-            btn = UIElement(center_position=(cx, int(cy + offset)),
+        for i, (label, action) in enumerate(actions.items()):
+            offset = (i - (len(actions) - 1) / 2) * spacing
+            btn = UIElement(center_position=(self.cx, int(self.cy + offset)),
                             text=label,
                             font_size=BUTTON_FONT_SIZE,
                             action=action)
             self.buttons.append(btn)
 
     def handle_event(self, event: pygame.event.Event) -> str | None:
-        return _handle_button_click(event, self.buttons)
+        action = _handle_button_click(event, self.buttons)
+        if action == "menu":
+            self.confirming_exit = True
+            self._set_actions(self.CONFIRM_ACTIONS)
+            return None
+        if action == "cancel_menu":
+            self.cancel_confirmation()
+            return None
+        if action == "confirm_menu":
+            return "menu"
+        return action
+
+    def cancel_confirmation(self) -> None:
+        """Restore the standard pause choices without discarding the session."""
+        if self.confirming_exit:
+            self.confirming_exit = False
+            self._set_actions(self.ACTIONS)
 
     def update(self, mouse_pos: tuple[int, int]) -> None:
         for button in self.buttons:

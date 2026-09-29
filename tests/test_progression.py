@@ -5,7 +5,12 @@ from __future__ import annotations
 import unittest
 
 from src.game_logic.config import Config
-from src.game_logic.game_engine import GameSession, GameState, transition_session
+from src.game_logic.game_engine import (
+    GameSession,
+    GameState,
+    LevelTimer,
+    transition_session,
+)
 
 
 class GameSessionTests(unittest.TestCase):
@@ -57,6 +62,15 @@ class GameSessionTests(unittest.TestCase):
             (session.level_index, session.score, session.lives),
             (4, 120, 0),
         )
+
+    def test_level_timer_pauses_during_death_until_respawn(self) -> None:
+        timer = LevelTimer(start_time=0)
+
+        timer.pause(100)
+        self.assertEqual(timer.elapsed_ms(10_000), 100)
+        timer.resume(10_000)
+
+        self.assertEqual(timer.elapsed_ms(10_100), 200)
 
 
 if __name__ == "__main__":

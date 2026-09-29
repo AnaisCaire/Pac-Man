@@ -184,13 +184,18 @@ def resolve_collisions(
 
 
 def handle_input(player: Player, events: list[pygame.event.Event]) -> None:
+    directions = {
+        pygame.K_UP: (0, -1),
+        pygame.K_w: (0, -1),
+        pygame.K_DOWN: (0, 1),
+        pygame.K_s: (0, 1),
+        pygame.K_LEFT: (-1, 0),
+        pygame.K_a: (-1, 0),
+        pygame.K_RIGHT: (1, 0),
+        pygame.K_d: (1, 0),
+    }
     for event in events:
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_UP:
-                player.next_direction = (0, -1)
-            elif event.key == pygame.K_DOWN:
-                player.next_direction = (0, 1)
-            elif event.key == pygame.K_LEFT:
-                player.next_direction = (-1, 0)
-            elif event.key == pygame.K_RIGHT:
-                player.next_direction = (1, 0)
+            direction = directions.get(event.key)
+            if direction is not None:
+                player.next_direction = direction
