@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 from collections.abc import Collection
 
 import pygame
 import random
 import sys
+from dataclasses import dataclass
 from enum import Enum
 from typing import cast
 
@@ -43,6 +46,40 @@ class GameState(Enum):
     GAME_OVER = 4
     VICTORY = 5
     INSTRUCT = 6
+
+
+@dataclass
+class GameSession:
+    """Application state retained across level transitions."""
+
+    level_index: int
+    score: int
+    lives: int
+
+    @classmethod
+    def new(cls, config: Config) -> GameSession:
+        """Create a fresh game session from the configured starting lives."""
+        return cls(level_index=0, score=0, lives=config.lives)
+
+    def reset(self, config: Config) -> None:
+        """Discard the current session before starting a new game."""
+        self.level_index = 0
+        self.score = 0
+        self.lives = config.lives
+
+
+def transition_session(
+    session: GameSession,
+    outcome: GameState,
+    level_count: int,
+) -> GameState:
+    """Advance one cleared level or return the terminal application state."""
+    if outcome is not GameState.VICTORY:
+        return outcome
+    if session.level_index + 1 >= level_count:
+        return GameState.VICTORY
+    session.level_index += 1
+    return GameState.IN_GAME
 
 
 def select_level_seed(configured_seed: int,
@@ -104,7 +141,6 @@ def _run_gameplay(screen: pygame.Surface, clock: ProjectClock,
     )
 
     level_start_time = clock.get_ticks_ms()
-    total_pause_ms = 0
 
     ghost_positions = maze.place_ghosts(spawn)
     ghost_classes = [Blinky, Pinky, Inky, Clyde]
@@ -126,9 +162,9 @@ def _run_gameplay(screen: pygame.Surface, clock: ProjectClock,
                 pygame.quit()
                 sys.exit()
             # Original review note: Maybe change track in "escape menu" too?
-            # Post-fix: deferred; pause-specific music is audio polish, not #4.
+            # Post-fix: deferred; pause-specific music is audio polish, not #7.
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                pause_start = clock.get_ticks_ms()
+                clock.pause()
                 paused = True
                 while paused:
                     for pause_event in pygame.event.get():
@@ -152,14 +188,16 @@ def _run_gameplay(screen: pygame.Surface, clock: ProjectClock,
                         # check later.
                         # Post-fix: kept current menu track.
                         elif action == "menu":
+                            clock.resume()
                             return (GameState.MAIN_MENU, player.score, player.lives)
                     pause_menu.update(pygame.mouse.get_pos())
                     pause_menu.draw(screen)
                     pygame.display.flip()
                     clock.tick(60)
-                total_pause_ms += clock.get_ticks_ms() - pause_start
+                clock.resume()
 
-        passed_secs = (current_time - level_start_time - total_pause_ms) // 1000
+        current_time = clock.get_ticks_ms()
+        passed_secs = (current_time - level_start_time) // 1000
         time_left = max(0, config.level_max_time - passed_secs)
         if terminal_state(
             player,
@@ -219,9 +257,7 @@ def game_loop(config: Config) -> None:
 
     # --- all the windows ------
     state = GameState.MAIN_MENU
-    current_level = 0
-    current_score = 0
-    current_lives = config.lives
+    session = GameSession.new(config)
     level_seed_rng = random.Random()
     music.play("menu")
     menu = MainMenu(WINDOW_SIZE, WINDOW_SIZE + HUB_HEIGHT)
@@ -242,9 +278,7 @@ def game_loop(config: Config) -> None:
             for event in events:
                 action = menu.handle_event(event)
                 if action == "play":
-                    current_level = 0
-                    current_score = 0
-                    current_lives = config.lives
+                    session.reset(config)
                     music.play("game")
                     state = GameState.IN_GAME
                 elif action == "highscores":
@@ -274,18 +308,18 @@ def game_loop(config: Config) -> None:
             inst_menu.draw(screen)
 
         elif state == GameState.IN_GAME:
-            next_state, current_score, current_lives = _run_gameplay(
+            next_state, session.score, session.lives = _run_gameplay(
                 screen, clock, config, pause_menu,
-                level_index=current_level,
+                level_index=session.level_index,
                 level_seed=select_level_seed(
                     config.seed,
-                    current_level,
+                    session.level_index,
                     level_seed_rng,
                 ),
                 placement_rng=random.Random(),
                 ghost_rng=random.Random(),
-                initial_score=current_score,
-                initial_lives=current_lives
+                initial_score=session.score,
+                initial_lives=session.lives
             )
             # Original review note: winning a level should advance to the next
             # level with the same lives and points.
@@ -295,15 +329,14 @@ def game_loop(config: Config) -> None:
             # Post-fix: deferred; transition timing/music is UX scope, not this
             # cleanup.
             if next_state == GameState.VICTORY:
-                current_level += 1
+                state = transition_session(session, next_state, len(config.level))
                 # Original review note: this case is actually winning the
                 # whole game; change track before setting the state.
                 # Post-fix: deferred; winning-track work belongs to audio polish.
-                if current_level >= len(config.level):
+                if state is GameState.VICTORY:
                     # Original review note: Maybe winning track?
                     # Post-fix: deferred; no new track assets in #4.
                     music.play("menu")
-                    state = GameState.VICTORY
                 # Original review note: This is going to the next level not
                 # state = GameState.IN_GAME, should load next level instead
                 # Post-fix: kept state transition; next loop loads next level
@@ -319,9 +352,7 @@ def game_loop(config: Config) -> None:
                 state = GameState.GAME_OVER
 
             elif next_state == GameState.MAIN_MENU:
-                current_level = 0
-                current_score = 0
-                current_lives = config.lives
+                session.reset(config)
                 music.play("menu")
                 state = GameState.MAIN_MENU
 

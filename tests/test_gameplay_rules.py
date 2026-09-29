@@ -5,10 +5,12 @@ from __future__ import annotations
 import random
 import unittest
 
+import pygame
+
 from src.game_logic.config import Config, LevelMazeSize
 from src.game_logic.entities.ghosts import Ghost, GhostState
 from src.game_logic.entities.items import Pacgum, SuperPacgum
-from src.game_logic.entities.player import Player, resolve_collisions
+from src.game_logic.entities.player import Player, handle_input, resolve_collisions
 from src.game_logic.game_engine import GameState, terminal_state
 from src.game_logic.maze import Maze
 
@@ -206,6 +208,19 @@ class GameplayRuleTests(unittest.TestCase):
             abs(ghost.grid_x - player.grid_x) + abs(ghost.grid_y - player.grid_y),
             5,
         )
+
+    def test_arrow_keys_map_to_the_four_required_directions(self) -> None:
+        player = Player(1, 1, 16, Config())
+        expected = {
+            pygame.K_UP: (0, -1),
+            pygame.K_DOWN: (0, 1),
+            pygame.K_LEFT: (-1, 0),
+            pygame.K_RIGHT: (1, 0),
+        }
+
+        for key, direction in expected.items():
+            handle_input(player, [pygame.event.Event(pygame.KEYDOWN, key=key)])
+            self.assertEqual(player.next_direction, direction)
 
 
 if __name__ == "__main__":

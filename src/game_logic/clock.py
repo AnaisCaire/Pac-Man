@@ -10,31 +10,52 @@ same convention `Ghost.update(current_time, maze)` already follows.
 from __future__ import annotations
 
 import time
+from collections.abc import Callable
 
 
 class ProjectClock:
-    """Millisecond timestamps and frame-rate limiting via `time.monotonic()`."""
+    """Simulation timestamps and frame-rate limiting via `time.monotonic()`."""
 
-    def __init__(self) -> None:
-        self._start = time.monotonic()
+    def __init__(
+        self,
+        monotonic: Callable[[], float] = time.monotonic,
+        sleep: Callable[[float], None] = time.sleep,
+    ) -> None:
+        self._monotonic = monotonic
+        self._sleep = sleep
+        self._start = monotonic()
         self._last_tick = self._start
+        self._pause_started: float | None = None
+        self._paused_seconds = 0.0
 
     def get_ticks_ms(self) -> int:
-        """Milliseconds elapsed since this clock was created."""
-        return int((time.monotonic() - self._start) * 1000)
+        """Milliseconds elapsed in gameplay simulation time."""
+        now = (
+            self._pause_started
+            if self._pause_started is not None
+            else self._monotonic()
+        )
+        return int((now - self._start - self._paused_seconds) * 1000)
+
+    def pause(self) -> None:
+        """Freeze simulation time while UI events and rendering continue."""
+        if self._pause_started is None:
+            self._pause_started = self._monotonic()
+
+    def resume(self) -> None:
+        """Resume simulation time without charging the pause duration."""
+        if self._pause_started is not None:
+            self._paused_seconds += self._monotonic() - self._pause_started
+            self._pause_started = None
 
     def tick(self, fps: int) -> int:
-        """Sleep as needed to cap the frame rate at `fps`.
-
-        Returns the elapsed time in milliseconds since the previous call,
-        mirroring `pygame.time.Clock.tick()`.
-        """
+        """Sleep as needed to cap the frame rate at `fps`."""
         target_dt = 1.0 / fps if fps > 0 else 0.0
-        now = time.monotonic()
+        now = self._monotonic()
         elapsed = now - self._last_tick
         if target_dt and elapsed < target_dt:
-            time.sleep(target_dt - elapsed)
-            now = time.monotonic()
+            self._sleep(target_dt - elapsed)
+            now = self._monotonic()
             elapsed = now - self._last_tick
         self._last_tick = now
         return int(elapsed * 1000)

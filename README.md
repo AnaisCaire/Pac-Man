@@ -59,6 +59,23 @@ safe defaults or clamps without discarding valid sibling settings.
 | `make debug` | Start Pac-Man under Python's built-in `pdb` debugger. |
 | `make clean` | Remove Python caches and local analysis output. |
 
+## Gameplay progression and controls
+
+- Use the arrow keys to move Pac-Man in the four required directions.
+- Press `Escape` during a level to pause. Resume continues the same session;
+  Return to Menu discards it and the next game starts with level 1, score 0,
+  and the configured lives.
+- The level timer, power-pellet, player respawn/invincibility, and ghost state
+  timers all use simulation time and do not advance while paused.
+- Reaching the time limit ends the current game in Game Over. Timeout takes
+  priority over same-frame gameplay actions.
+- Completing a level keeps score and remaining lives. Completing the tenth
+  configured level wins the game.
+
+The delivered `config.json` contains ten 15x15–18x18 levels. The 18x18 cap
+avoids a known hang in the assigned maze generator at larger sizes. Level 1
+uses the configured seed; later levels use isolated random seeds.
+
 ## A-Maze-ing package
 
 The assigned external maze-generator artifact is tracked unchanged as
