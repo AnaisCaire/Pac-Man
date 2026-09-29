@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 from collections.abc import Collection
 
 import pygame
 import random
 import sys
+from dataclasses import dataclass
 from enum import Enum
 from typing import cast
 
@@ -28,7 +31,7 @@ from ..ui.gameplay import (
 from ..ui.music_manager import MusicManager
 from .entities.player import Player, handle_input, resolve_collisions
 from .entities.ghost_types import Blinky, Pinky, Inky, Clyde
-from .entities.ghosts import Ghost
+from .entities.ghosts import Ghost, MIN_RESPAWN_DISTANCE
 
 
 WINDOW_SIZE = 800
@@ -43,6 +46,93 @@ class GameState(Enum):
     GAME_OVER = 4
     VICTORY = 5
     INSTRUCT = 6
+
+
+@dataclass
+class GameSession:
+    """Application state retained across level transitions."""
+
+    level_index: int
+    score: int
+    lives: int
+
+    @classmethod
+    def new(cls, config: Config) -> GameSession:
+        """Create a fresh game session from the configured starting lives."""
+        return cls(level_index=0, score=0, lives=config.lives)
+
+    def reset(self, config: Config) -> None:
+        """Discard the current session before starting a new game."""
+        self.level_index = 0
+        self.score = 0
+        self.lives = config.lives
+
+
+@dataclass
+class LevelTimer:
+    """Level elapsed time, excluding a player's death-to-respawn transition."""
+
+    start_time: int
+    paused_at: int | None = None
+    paused_ms: int = 0
+
+    def pause(self, current_time: int) -> None:
+        """Stop the level countdown once without stopping respawn processing."""
+        if self.paused_at is None:
+            self.paused_at = current_time
+
+    def resume(self, current_time: int) -> None:
+        """Resume the level countdown after the player has respawned."""
+        if self.paused_at is not None:
+            self.paused_ms += current_time - self.paused_at
+            self.paused_at = None
+
+    def elapsed_ms(self, current_time: int) -> int:
+        """Return elapsed level time excluding a current or completed pause."""
+        end_time = self.paused_at if self.paused_at is not None else current_time
+        return end_time - self.start_time - self.paused_ms
+
+
+def transition_session(
+    session: GameSession,
+    outcome: GameState,
+    level_count: int,
+) -> GameState:
+    """Advance one cleared level or return the terminal application state."""
+    if outcome is not GameState.VICTORY:
+        return outcome
+    if session.level_index + 1 >= level_count:
+        return GameState.VICTORY
+    session.level_index += 1
+    return GameState.IN_GAME
+
+
+def _move_ghosts_away_from_spawn(ghosts: list[Ghost], player: Player) -> None:
+    """Relocate nearby ghosts to free corners before a player respawns."""
+    spawn = (player.spawn_x, player.spawn_y)
+    for ghost in ghosts:
+        distance = abs(ghost.grid_x - spawn[0]) + abs(ghost.grid_y - spawn[1])
+        if distance >= MIN_RESPAWN_DISTANCE:
+            continue
+        occupied = {
+            (other.grid_x, other.grid_y)
+            for other in ghosts
+            if other is not ghost
+        }
+        corner = next(
+            (
+                position
+                for position in ghost.home_positions
+                if position not in occupied
+                and abs(position[0] - spawn[0]) + abs(position[1] - spawn[1])
+                >= MIN_RESPAWN_DISTANCE
+            ),
+            None,
+        )
+        if corner is not None:
+            ghost.grid_x, ghost.grid_y = corner
+            ghost.current_direction = (0, 0)
+            ghost.progress = 0.0
 
 
 def select_level_seed(configured_seed: int,
@@ -103,19 +193,20 @@ def _run_gameplay(screen: pygame.Surface, clock: ProjectClock,
         blocked=set(super_pacgums),
     )
 
-    level_start_time = clock.get_ticks_ms()
-    total_pause_ms = 0
+    simulation_start = clock.get_ticks_ms()
+    level_timer = LevelTimer(simulation_start)
 
     ghost_positions = maze.place_ghosts(spawn)
     ghost_classes = [Blinky, Pinky, Inky, Clyde]
     ghost_list: list[Ghost] = []
     for cls, pos in zip(ghost_classes, ghost_positions):
         x, y = pos
-        ghost_list.append(cls(x, y, tile_size, player, level_start_time, ghost_rng))
+        ghost_list.append(cls(x, y, tile_size, player, simulation_start, ghost_rng))
     for ghost in ghost_list:
         ghost.home_positions = ghost_positions
     inky = cast(Inky, ghost_list[2])
     inky.blinky = ghost_list[0]
+    death_transition_handled = False
 
     while True:
         current_time = clock.get_ticks_ms()
@@ -126,9 +217,9 @@ def _run_gameplay(screen: pygame.Surface, clock: ProjectClock,
                 pygame.quit()
                 sys.exit()
             # Original review note: Maybe change track in "escape menu" too?
-            # Post-fix: deferred; pause-specific music is audio polish, not #4.
+            # Post-fix: deferred; pause-specific music is audio polish, not #7.
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                pause_start = clock.get_ticks_ms()
+                clock.pause()
                 paused = True
                 while paused:
                     for pause_event in pygame.event.get():
@@ -140,26 +231,31 @@ def _run_gameplay(screen: pygame.Surface, clock: ProjectClock,
                             and pause_event.key == pygame.K_ESCAPE
                         )
                         if escape_pressed:
+                            pause_menu.cancel_confirmation()
                             paused = False
                         action = pause_menu.handle_event(pause_event)
                         if action == "resume":
+                            pause_menu.cancel_confirmation()
                             paused = False
-                        # Original review note: returning to menu could
-                        # confirm progress loss with yes/no buttons.
-                        # Post-fix: deferred; confirmation modal changes UX
-                        # and input flow.
                         # Original review note: menu track may be okay here;
                         # check later.
                         # Post-fix: kept current menu track.
                         elif action == "menu":
+                            pause_menu.cancel_confirmation()
+                            clock.resume()
                             return (GameState.MAIN_MENU, player.score, player.lives)
                     pause_menu.update(pygame.mouse.get_pos())
                     pause_menu.draw(screen)
                     pygame.display.flip()
                     clock.tick(60)
-                total_pause_ms += clock.get_ticks_ms() - pause_start
+                clock.resume()
 
-        passed_secs = (current_time - level_start_time - total_pause_ms) // 1000
+        current_time = clock.get_ticks_ms()
+        if player.is_dying or (not player.is_alive and player.lives > 0):
+            level_timer.pause(current_time)
+        else:
+            level_timer.resume(current_time)
+        passed_secs = level_timer.elapsed_ms(current_time) // 1000
         time_left = max(0, config.level_max_time - passed_secs)
         if terminal_state(
             player,
@@ -178,14 +274,23 @@ def _run_gameplay(screen: pygame.Surface, clock: ProjectClock,
             ghost_list,
             current_time,
         )
+        if player.is_dying:
+            level_timer.pause(current_time)
+            if not death_transition_handled:
+                _move_ghosts_away_from_spawn(ghost_list, player)
+                death_transition_handled = True
         player.update_timers(current_time)
+        if player.is_alive and not player.is_dying:
+            level_timer.resume(current_time)
+            death_transition_handled = False
 
         outcome = terminal_state(player, pacgums, super_pacgums)
         if outcome is not None:
             return (outcome, player.score, player.lives)
 
-        for ghost in ghost_list:
-            ghost.update(current_time, maze)
+        if player.is_alive and not player.is_dying:
+            for ghost in ghost_list:
+                ghost.update(current_time, maze)
 
         screen.fill((0, 0, 0))
         draw_maze(screen, maze, tile_size, offset_x, offset_y)
@@ -219,9 +324,7 @@ def game_loop(config: Config) -> None:
 
     # --- all the windows ------
     state = GameState.MAIN_MENU
-    current_level = 0
-    current_score = 0
-    current_lives = config.lives
+    session = GameSession.new(config)
     level_seed_rng = random.Random()
     music.play("menu")
     menu = MainMenu(WINDOW_SIZE, WINDOW_SIZE + HUB_HEIGHT)
@@ -242,9 +345,7 @@ def game_loop(config: Config) -> None:
             for event in events:
                 action = menu.handle_event(event)
                 if action == "play":
-                    current_level = 0
-                    current_score = 0
-                    current_lives = config.lives
+                    session.reset(config)
                     music.play("game")
                     state = GameState.IN_GAME
                 elif action == "highscores":
@@ -274,18 +375,18 @@ def game_loop(config: Config) -> None:
             inst_menu.draw(screen)
 
         elif state == GameState.IN_GAME:
-            next_state, current_score, current_lives = _run_gameplay(
+            next_state, session.score, session.lives = _run_gameplay(
                 screen, clock, config, pause_menu,
-                level_index=current_level,
+                level_index=session.level_index,
                 level_seed=select_level_seed(
                     config.seed,
-                    current_level,
+                    session.level_index,
                     level_seed_rng,
                 ),
                 placement_rng=random.Random(),
                 ghost_rng=random.Random(),
-                initial_score=current_score,
-                initial_lives=current_lives
+                initial_score=session.score,
+                initial_lives=session.lives
             )
             # Original review note: winning a level should advance to the next
             # level with the same lives and points.
@@ -295,15 +396,14 @@ def game_loop(config: Config) -> None:
             # Post-fix: deferred; transition timing/music is UX scope, not this
             # cleanup.
             if next_state == GameState.VICTORY:
-                current_level += 1
+                state = transition_session(session, next_state, len(config.level))
                 # Original review note: this case is actually winning the
                 # whole game; change track before setting the state.
                 # Post-fix: deferred; winning-track work belongs to audio polish.
-                if current_level >= len(config.level):
+                if state is GameState.VICTORY:
                     # Original review note: Maybe winning track?
                     # Post-fix: deferred; no new track assets in #4.
                     music.play("menu")
-                    state = GameState.VICTORY
                 # Original review note: This is going to the next level not
                 # state = GameState.IN_GAME, should load next level instead
                 # Post-fix: kept state transition; next loop loads next level
@@ -319,9 +419,7 @@ def game_loop(config: Config) -> None:
                 state = GameState.GAME_OVER
 
             elif next_state == GameState.MAIN_MENU:
-                current_level = 0
-                current_score = 0
-                current_lives = config.lives
+                session.reset(config)
                 music.play("menu")
                 state = GameState.MAIN_MENU
 

@@ -59,6 +59,29 @@ safe defaults or clamps without discarding valid sibling settings.
 | `make debug` | Start Pac-Man under Python's built-in `pdb` debugger. |
 | `make clean` | Remove Python caches and local analysis output. |
 
+## Gameplay progression and controls
+
+- Use either the arrow keys or W/A/S/D to move Pac-Man in the four required
+  directions. Both schemes set the same queued direction, so pressing their
+  matching keys together never doubles movement.
+- Press `Escape` during a level to pause. Resume continues the same session;
+  Return to Menu asks for confirmation before discarding it. The next game
+  starts with level 1, score 0, and the configured lives.
+- The level timer, power-pellet, player respawn/invincibility, and ghost state
+  timers all use simulation time and do not advance while paused.
+- A lethal collision also pauses only the level countdown until the player
+  respawns; death animation and respawn processing continue normally. During
+  that transition Pac-Man cannot collect items, ghosts are frozen, and any
+  ghost within five tiles of the respawn is moved to a free distant corner.
+- Reaching the time limit ends the current game in Game Over. Timeout takes
+  priority over same-frame gameplay actions.
+- Completing a level keeps score and remaining lives. Completing the tenth
+  configured level wins the game.
+
+The delivered `config.json` contains ten 15x15–18x18 levels. The 18x18 cap
+avoids a known hang in the assigned maze generator at larger sizes. Level 1
+uses the configured seed; later levels use isolated random seeds.
+
 ## A-Maze-ing package
 
 The assigned external maze-generator artifact is tracked unchanged as
@@ -95,4 +118,7 @@ use injected RNG sources instead of sharing module-global randomness.
 
 ### Sounds
 
-- https://downloads.khinsider.com/game-soundtracks/album/pac-man-game-sound-effects 
+- https://downloads.khinsider.com/game-soundtracks/album/pac-man-game-sound-effects
+
+Note: the bundled gameplay music at `src/ui/sounds/game.mp3` was refreshed on
+`main` before the scoring/collision PR branch was fast-forwarded.

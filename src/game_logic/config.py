@@ -7,6 +7,8 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 _MIN_LEVEL_SIZE = 15
+_MAX_LEVEL_SIZE = 18
+_MIN_LEVELS = 10
 _MIN_LEVEL_TIME = 15
 
 
@@ -104,15 +106,38 @@ def _level_size(raw: object, index: int) -> LevelMazeSize:
             f"must be >= 15, got {height}; clamping to 15",
         )
         height = _MIN_LEVEL_SIZE
+    if width > _MAX_LEVEL_SIZE:
+        _warning(
+            f"level[{index}].width",
+            f"must be <= {_MAX_LEVEL_SIZE}, got {width}; clamping to {_MAX_LEVEL_SIZE}",
+        )
+        width = _MAX_LEVEL_SIZE
+    if height > _MAX_LEVEL_SIZE:
+        message = (
+            f"must be <= {_MAX_LEVEL_SIZE}, got {height}; "
+            f"clamping to {_MAX_LEVEL_SIZE}"
+        )
+        _warning(
+            f"level[{index}].height",
+            message,
+        )
+        height = _MAX_LEVEL_SIZE
     return LevelMazeSize(width=width, height=height)
 
 
 def _levels_value(raw: object, default: list[LevelMazeSize]) -> list[LevelMazeSize]:
-    """Normalize the level list while preserving each valid entry."""
+    """Normalize at least ten generator-safe levels."""
     if not isinstance(raw, list) or not raw:
         _warning("level", "expected non-empty list; using default levels")
         return default
-    return [_level_size(item, index) for index, item in enumerate(raw)]
+    levels = [_level_size(item, index) for index, item in enumerate(raw)]
+    if len(levels) < _MIN_LEVELS:
+        _warning(
+            "level",
+            f"must contain {_MIN_LEVELS} levels; extending with 15x15",
+        )
+        levels.extend(LevelMazeSize() for _ in range(_MIN_LEVELS - len(levels)))
+    return levels
 
 
 def _config_from_dict(data: dict[str, Any]) -> Config:

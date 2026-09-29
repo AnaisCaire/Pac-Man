@@ -53,17 +53,41 @@ class ConfigParsingTests(unittest.TestCase):
 
     def test_unknown_keys_do_not_discard_valid_known_values(self) -> None:
         """Unknown top-level and level keys are ignored independently."""
-        config = self.parse_text(
-            json.dumps({
-                "lives": 7,
-                "unknown": "ignored",
-                "level": [{"width": 19, "height": 20, "theme": "ignored"}],
-            })
-        )
+        with self.assertLogs("src.game_logic.config", level="WARNING"):
+            config = self.parse_text(
+                json.dumps({
+                    "lives": 7,
+                    "unknown": "ignored",
+                    "level": [{"width": 19, "height": 20, "theme": "ignored"}],
+                })
+            )
 
         self.assertEqual(config.lives, 7)
-        self.assertEqual(config.level[0].width, 19)
-        self.assertEqual(config.level[0].height, 20)
+        self.assertEqual(config.level[0].width, 18)
+        self.assertEqual(config.level[0].height, 18)
+
+    def test_levels_are_extended_to_ten_and_clamped_to_safe_size(self) -> None:
+        """A playable delivery always has ten levels no larger than 18x18."""
+        with self.assertLogs("src.game_logic.config", level="WARNING"):
+            config = self.parse_text(json.dumps({
+                "level": [{"width": 99, "height": 19}],
+            }))
+
+        self.assertEqual(len(config.level), 10)
+        self.assertEqual((config.level[0].width, config.level[0].height), (18, 18))
+        self.assertTrue(all(
+            15 <= level.width <= 18 and 15 <= level.height <= 18
+            for level in config.level
+        ))
+
+    def test_delivered_config_has_ten_generator_safe_levels(self) -> None:
+        config = parse_config("config.json")
+
+        self.assertEqual(len(config.level), 10)
+        self.assertTrue(all(
+            15 <= level.width <= 18 and 15 <= level.height <= 18
+            for level in config.level
+        ))
 
     def test_invalid_fields_fall_back_independently(self) -> None:
         """Bad fields use safe defaults without losing valid sibling values."""
@@ -98,11 +122,12 @@ class ConfigParsingTests(unittest.TestCase):
         self.assertEqual(config.points_per_ghost, defaults.points_per_ghost)
         self.assertEqual(config.seed, defaults.seed)
         self.assertEqual(config.level_max_time, defaults.level_max_time)
-        self.assertEqual([(level.width, level.height) for level in config.level], [
+        self.assertEqual([(level.width, level.height) for level in config.level[:3]], [
             (15, 15),
             (15, 15),
-            (21, 22),
+            (18, 18),
         ])
+        self.assertEqual(len(config.level), 10)
         self.assertGreaterEqual(len(logs.output), 8)
 
     def test_malformed_json_root_and_missing_file_use_defaults(self) -> None:
