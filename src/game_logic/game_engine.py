@@ -31,7 +31,7 @@ from ..ui.gameplay import (
 from ..ui.music_manager import MusicManager
 from .entities.player import Player, handle_input, resolve_collisions
 from .entities.ghost_types import Blinky, Pinky, Inky, Clyde
-from .entities.ghosts import Ghost
+from .entities.ghosts import Ghost, MIN_RESPAWN_DISTANCE
 
 
 WINDOW_SIZE = 800
@@ -107,6 +107,34 @@ def transition_session(
     return GameState.IN_GAME
 
 
+def _move_ghosts_away_from_spawn(ghosts: list[Ghost], player: Player) -> None:
+    """Relocate nearby ghosts to free corners before a player respawns."""
+    spawn = (player.spawn_x, player.spawn_y)
+    for ghost in ghosts:
+        distance = abs(ghost.grid_x - spawn[0]) + abs(ghost.grid_y - spawn[1])
+        if distance >= MIN_RESPAWN_DISTANCE:
+            continue
+        occupied = {
+            (other.grid_x, other.grid_y)
+            for other in ghosts
+            if other is not ghost
+        }
+        corner = next(
+            (
+                position
+                for position in ghost.home_positions
+                if position not in occupied
+                and abs(position[0] - spawn[0]) + abs(position[1] - spawn[1])
+                >= MIN_RESPAWN_DISTANCE
+            ),
+            None,
+        )
+        if corner is not None:
+            ghost.grid_x, ghost.grid_y = corner
+            ghost.current_direction = (0, 0)
+            ghost.progress = 0.0
+
+
 def select_level_seed(configured_seed: int,
                       level_index: int,
                       level_seed_rng: random.Random) -> int:
@@ -178,6 +206,7 @@ def _run_gameplay(screen: pygame.Surface, clock: ProjectClock,
         ghost.home_positions = ghost_positions
     inky = cast(Inky, ghost_list[2])
     inky.blinky = ghost_list[0]
+    death_transition_handled = False
 
     while True:
         current_time = clock.get_ticks_ms()
@@ -247,16 +276,21 @@ def _run_gameplay(screen: pygame.Surface, clock: ProjectClock,
         )
         if player.is_dying:
             level_timer.pause(current_time)
+            if not death_transition_handled:
+                _move_ghosts_away_from_spawn(ghost_list, player)
+                death_transition_handled = True
         player.update_timers(current_time)
-        if player.is_alive:
+        if player.is_alive and not player.is_dying:
             level_timer.resume(current_time)
+            death_transition_handled = False
 
         outcome = terminal_state(player, pacgums, super_pacgums)
         if outcome is not None:
             return (outcome, player.score, player.lives)
 
-        for ghost in ghost_list:
-            ghost.update(current_time, maze)
+        if player.is_alive and not player.is_dying:
+            for ghost in ghost_list:
+                ghost.update(current_time, maze)
 
         screen.fill((0, 0, 0))
         draw_maze(screen, maze, tile_size, offset_x, offset_y)

@@ -172,6 +172,8 @@ def resolve_collisions(
     current_time: int,
 ) -> None:
     """Resolve items before ghosts, so a same-tile super-pacgum wins."""
+    if player.is_dying or not player.is_alive:
+        return
     was_powered_up = player.is_powered_up
     player.check_item_collision(pacgums, super_pacgums, current_time)
     if player.is_powered_up and not was_powered_up:

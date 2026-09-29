@@ -70,7 +70,9 @@ safe defaults or clamps without discarding valid sibling settings.
 - The level timer, power-pellet, player respawn/invincibility, and ghost state
   timers all use simulation time and do not advance while paused.
 - A lethal collision also pauses only the level countdown until the player
-  respawns; death animation and respawn processing continue normally.
+  respawns; death animation and respawn processing continue normally. During
+  that transition Pac-Man cannot collect items, ghosts are frozen, and any
+  ghost within five tiles of the respawn is moved to a free distant corner.
 - Reaching the time limit ends the current game in Game Over. Timeout takes
   priority over same-frame gameplay actions.
 - Completing a level keeps score and remaining lives. Completing the tenth
