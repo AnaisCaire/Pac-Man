@@ -95,4 +95,7 @@ use injected RNG sources instead of sharing module-global randomness.
 
 ### Sounds
 
-- https://downloads.khinsider.com/game-soundtracks/album/pac-man-game-sound-effects 
+- https://downloads.khinsider.com/game-soundtracks/album/pac-man-game-sound-effects
+
+Note: the bundled gameplay music at `src/ui/sounds/game.mp3` was refreshed on
+`main` before the scoring/collision PR branch was fast-forwarded.
