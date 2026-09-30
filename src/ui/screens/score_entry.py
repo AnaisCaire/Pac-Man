@@ -90,8 +90,9 @@ class ScoreEntryScreen:
         _draw_center(
             surface, "INSERT NAME", text_y + 45, _TEXT_COLOR
         )
+        visible_name = f"{self.name} I" if self.name else "I"
         _draw_center(
-            surface, f"> {self.name}_", text_y + 85, _TEXT_COLOR
+            surface, f"NAME: {visible_name}", text_y + 85, _TEXT_COLOR
         )
         _draw_center(
             surface, "PRESS ENTER TO SUBMIT", text_y + 135, _TEXT_COLOR

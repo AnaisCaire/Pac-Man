@@ -51,6 +51,18 @@ class ScoreEntryScreenTests(unittest.TestCase):
         self.assertIsNone(action)
         self.assertIsNotNone(screen.error)
 
+    def test_empty_field_draws_a_supported_visible_cursor(self) -> None:
+        screen = self.make_screen()
+        surface = pygame.Surface((800, 900))
+
+        with patch("src.ui.screens.score_entry._draw_center") as draw_center:
+            screen.draw(surface)
+
+        self.assertIn(
+            "NAME: I",
+            [call.args[1] for call in draw_center.call_args_list],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
