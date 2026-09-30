@@ -71,17 +71,14 @@ class HighscoreTests(unittest.TestCase):
             self.assertTrue(path.is_file())
 
     def test_configured_path_is_used_exactly(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            data_dir = Path(directory)
-
-            self.assertEqual(
-                resolve_highscore_path("scores/high_scores.json", data_dir),
-                Path("scores/high_scores.json"),
-            )
-            self.assertEqual(
-                resolve_highscore_path("../escaped.json", data_dir),
-                Path("../escaped.json"),
-            )
+        self.assertEqual(
+            resolve_highscore_path("scores/high_scores.json"),
+            Path("scores/high_scores.json"),
+        )
+        self.assertEqual(
+            resolve_highscore_path("../escaped.json"),
+            Path("../escaped.json"),
+        )
 
     def test_load_preserves_file_order_and_update_replaces_same_name(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

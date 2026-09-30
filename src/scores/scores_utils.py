@@ -12,9 +12,8 @@ from .model import ScoreEntry
 _MAX_SCORES = 10
 
 
-def resolve_highscore_path(filename: str, data_dir: Path | None = None) -> Path:
+def resolve_highscore_path(filename: str) -> Path:
     """Use the configured highscore path exactly as supplied."""
-    del data_dir
     return Path(filename)
 
 
