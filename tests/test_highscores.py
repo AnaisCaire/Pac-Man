@@ -44,6 +44,13 @@ class HighscoreTests(unittest.TestCase):
         self.assertEqual(ranked[0].score, 100)
         self.assertGreaterEqual(ranked[-1].score, 2)
 
+    def test_equal_scores_use_a_case_sensitive_final_tiebreaker(self) -> None:
+        first = rank_scores([ScoreEntry("a", 10), ScoreEntry("A", 10)])
+        second = rank_scores([ScoreEntry("A", 10), ScoreEntry("a", 10)])
+
+        self.assertEqual(first, second)
+        self.assertEqual([entry.name for entry in first], ["A", "a"])
+
     def test_missing_or_malformed_file_recovers_to_empty_scores(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "scores.json"
@@ -60,6 +67,20 @@ class HighscoreTests(unittest.TestCase):
             self.assertTrue(save_highscores(path, scores))
             self.assertEqual(load_highscores(path), scores)
             self.assertTrue(path.is_file())
+
+    def test_unsafe_configured_paths_stay_inside_runtime_data_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            data_dir = Path(directory)
+            expected = data_dir / "scores" / "high_scores.json"
+
+            self.assertEqual(
+                resolve_highscore_path("../escaped.json", data_dir),
+                expected,
+            )
+            self.assertEqual(
+                resolve_highscore_path("/tmp/escaped.json", data_dir),
+                expected,
+            )
 
     def test_failed_write_preserves_existing_scores(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

@@ -15,16 +15,17 @@ _MAX_SCORES = 10
 def resolve_highscore_path(filename: str, data_dir: Path | None = None) -> Path:
     """Resolve a logical config filename to a writable runtime location."""
     path = Path(filename)
-    if path.is_absolute():
-        return path
-    return (data_dir or Path.home() / ".pacman") / path
+    root = data_dir or Path.home() / ".pacman"
+    if filename.startswith(("/", "\\")) or path.is_absolute() or ".." in path.parts:
+        return root / "scores" / "high_scores.json"
+    return root / path
 
 
 def rank_scores(scores: list[ScoreEntry]) -> list[ScoreEntry]:
     """Return a deterministic Top 10 sorted by score then player name."""
     return sorted(
         scores,
-        key=lambda entry: (-entry.score, entry.name.casefold()),
+        key=lambda entry: (-entry.score, entry.name.casefold(), entry.name),
     )[:_MAX_SCORES]
 
 
