@@ -1,9 +1,10 @@
+from ...scores.model import ScoreEntry
 from .bottons import UIElement
-from ..gfx import raster
+from ..gfx import bitmap_font, raster
 import pygame
 import pathlib
-_IMAGES_DIR = pathlib.Path(__file__).parent.parent / "images"
 
+_IMAGES_DIR = pathlib.Path(__file__).parent.parent / "images"
 BUTTON_FONT_SIZE = 40
 BG_COLOR = (106, 159, 181)
 LOGO_MAX_WIDTH = 600
@@ -19,57 +20,47 @@ def _handle_button_click(event: pygame.event.Event,
     return None
 
 
-# Original review note: I see 4 classes implementing the same method all over
-# again: handle_event, we should look around refactoring, maybe pattern?
-# Post-fix: shared the button-click lookup in a private helper; no class
-# hierarchy until screen behavior actually needs one.
-
 class HighscoreScreen():
-    """
-    mario = put content inside
-    """
+    """Display the current Top 10 and return to the main menu."""
 
     def __init__(self, screen_width: int, screen_height: int):
-        # back button:
-        cx = screen_width // 2  # center it
-        by = screen_height - 150  # bottom
-        self.back_btn = UIElement(center_position=(cx, by),
-                                  text="Back",
-                                  font_size=BUTTON_FONT_SIZE,
-                                  action="back")
+        cx = screen_width // 2
+        by = screen_height - 150
+        self.back_btn = UIElement(center_position=(cx, by), text="Back",
+                                  font_size=BUTTON_FONT_SIZE, action="back")
+        self.scores: list[ScoreEntry] = []
+
+    def set_scores(self, scores: list[ScoreEntry]) -> None:
+        """Display the current deterministic Top 10 board."""
+        self.scores = scores
 
     def handle_event(self, event: pygame.event.Event) -> str | None:
-        """ Use pygame event class to track if mouse on btn"""
         return _handle_button_click(event, [self.back_btn])
 
     def update(self, mouse_pos: tuple[int, int]) -> None:
-        """ update the mouse position"""
         self.back_btn.update(mouse_pos)
 
     def draw(self, surface: pygame.Surface) -> None:
-        """ add together """
         surface.fill(BG_COLOR)
+        for index, score in enumerate(self.scores):
+            text = bitmap_font.render_text(
+                f"{index + 1}: {score.name} {score.score}", 3, (255, 255, 255)
+            )
+            raster.blit_to_surface(surface, text, (80, 50 + index * 35))
         self.back_btn.draw(surface)
 
 
 class InstructionsScreen():
-    """
-    give instructions
-    """
+    """Show the controls image and a return button."""
 
     def __init__(self, screen_width: int, screen_height: int):
-        # back button:
-        cx = screen_width // 2  # center it
-        by = screen_height - 50  # bottom
-        self.back_btn = UIElement(center_position=(cx, by),
-                                  text="Back",
-                                  font_size=BUTTON_FONT_SIZE,
-                                  action="back")
-        # scale the image
+        cx = screen_width // 2
+        by = screen_height - 50
+        self.back_btn = UIElement(center_position=(cx, by), text="Back",
+                                  font_size=BUTTON_FONT_SIZE, action="back")
         raw_image = raster.load_rgba(str(_IMAGES_DIR / "instructions.png"))
-        max_h = by - 20  # don't overlap the back button
-        scale = min(screen_width / raw_image.shape[0],
-                    max_h / raw_image.shape[1])
+        max_h = by - 20
+        scale = min(screen_width / raw_image.shape[0], max_h / raw_image.shape[1])
         img_w = int(raw_image.shape[0] * scale)
         img_h = int(raw_image.shape[1] * scale)
         self.image = raster.nearest_neighbor_scale(raw_image, img_w, img_h)
@@ -91,18 +82,10 @@ class InstructionsScreen():
 class PauseScreen():
     """Full-screen pause menu with Resume and Return to Main Menu buttons."""
 
-    ACTIONS = {
-        "Resume":            "resume",
-        "Return to Menu":    "menu",
-    }
-    CONFIRM_ACTIONS = {
-        "Keep Playing":       "cancel_menu",
-        "Discard Game":       "confirm_menu",
-    }
+    ACTIONS = {"Resume": "resume", "Return to Menu": "menu"}
+    CONFIRM_ACTIONS = {"Keep Playing": "cancel_menu", "Discard Game": "confirm_menu"}
 
     def __init__(self, screen_width: int, screen_height: int):
-
-        # load / scale  logo to fit
         raw_logo = raster.load_rgba(str(_IMAGES_DIR / "main_screen_logo.png"))
         logo_scale = min(LOGO_MAX_WIDTH / raw_logo.shape[0], 1.0)
         logo_w = int(raw_logo.shape[0] * logo_scale)
@@ -110,7 +93,6 @@ class PauseScreen():
         self.logo = raster.nearest_neighbor_scale(raw_logo, logo_w, logo_h)
         self.logo_rect = pygame.Rect((0, 0), (logo_w, logo_h))
         self.logo_rect.center = (screen_width // 2, logo_h // 2 + 20)
-
         self.cx = screen_width // 2
         self.cy = screen_height // 2
         self.confirming_exit = False
@@ -118,16 +100,14 @@ class PauseScreen():
         self._set_actions(self.ACTIONS)
 
     def _set_actions(self, actions: dict[str, str]) -> None:
-        """Show one small action set without a separate modal framework."""
         spacing = BUTTON_FONT_SIZE + 30
         self.buttons = []
         for i, (label, action) in enumerate(actions.items()):
             offset = (i - (len(actions) - 1) / 2) * spacing
-            btn = UIElement(center_position=(self.cx, int(self.cy + offset)),
-                            text=label,
-                            font_size=BUTTON_FONT_SIZE,
-                            action=action)
-            self.buttons.append(btn)
+            self.buttons.append(UIElement(
+                center_position=(self.cx, int(self.cy + offset)), text=label,
+                font_size=BUTTON_FONT_SIZE, action=action,
+            ))
 
     def handle_event(self, event: pygame.event.Event) -> str | None:
         action = _handle_button_click(event, self.buttons)

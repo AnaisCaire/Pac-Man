@@ -82,6 +82,17 @@ The delivered `config.json` contains ten 15x15–18x18 levels. The 18x18 cap
 avoids a known hang in the assigned maze generator at larger sizes. Level 1
 uses the configured seed; later levels use isolated random seeds.
 
+## Highscores
+
+After a win or loss, enter a name of 1–10 ASCII letters, numbers, or spaces and
+select Save Score. The game stores a deterministic Top 10 sorted by descending
+score then name. Missing or corrupt score files recover to an empty board.
+
+`highscore_filename` is a logical config path. At runtime it resolves under
+`~/.pacman/`, keeping saves writable outside the source or packaged install.
+Writes use a temporary file followed by replacement, so a failed save preserves
+the prior board.
+
 ## A-Maze-ing package
 
 The assigned external maze-generator artifact is tracked unchanged as
