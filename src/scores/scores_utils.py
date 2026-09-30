@@ -84,7 +84,7 @@ def save_highscores(path: Path, scores: list[ScoreEntry]) -> bool:
 
 def record_score(path: Path, entry: ScoreEntry) -> list[ScoreEntry] | None:
     """Persist one submitted score and return the resulting board on success."""
-    scores = load_highscores(path)
-    scores.append(entry)
-    ranked = rank_scores(scores)
+    scores = {score.name: score for score in load_highscores(path)}
+    scores[entry.name] = entry
+    ranked = rank_scores(list(scores.values()))
     return ranked if save_highscores(path, ranked) else None

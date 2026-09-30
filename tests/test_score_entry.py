@@ -9,6 +9,7 @@ import numpy as np
 import pygame
 
 from src.ui.screens.score_entry import ScoreEntryScreen
+from src.ui.gfx import bitmap_font
 
 
 class ScoreEntryScreenTests(unittest.TestCase):
@@ -62,6 +63,7 @@ class ScoreEntryScreenTests(unittest.TestCase):
             "NAME: I",
             [call.args[1] for call in draw_center.call_args_list],
         )
+        self.assertTrue(bitmap_font.render_text("I", 4, (255, 255, 255))[:, :, 3].any())
 
 
 if __name__ == "__main__":
