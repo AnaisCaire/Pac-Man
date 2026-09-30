@@ -63,7 +63,7 @@ class HighscoreTests(unittest.TestCase):
     def test_save_round_trip_uses_configured_data_directory(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             data_dir = Path(directory)
-            path = resolve_highscore_path("scores/high_scores.json", data_dir)
+            path = data_dir / "scores" / "high_scores.json"
             scores = [ScoreEntry("Ana", 100), ScoreEntry("Mario", 50)]
 
             self.assertTrue(save_highscores(path, scores))
