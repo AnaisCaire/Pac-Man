@@ -84,9 +84,10 @@ uses the configured seed; later levels use isolated random seeds.
 
 ## Highscores
 
-After a win or loss, enter a name of 1–10 ASCII letters, numbers, or spaces and
-select Save Score. The game stores a deterministic Top 10 sorted by descending
-score then name. Missing or corrupt score files recover to an empty board.
+After a win or loss, enter a name of 1–10 ASCII letters, numbers, or spaces
+under `INSERT NAME`, then press Enter to submit. The game stores a deterministic
+Top 10 sorted by descending score then name. Missing or corrupt score files
+recover to an empty board.
 
 `highscore_filename` is a logical relative config path. At runtime it resolves
 under `~/.pacman/`, keeping saves writable outside the source or packaged

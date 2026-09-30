@@ -8,13 +8,11 @@ import pygame
 
 from ...scores.model import ScoreEntry
 from ..gfx import bitmap_font, raster
-from .bottons import UIElement
 
 _BG_COLOR = (106, 159, 181)
 _TEXT_COLOR = (255, 255, 255)
 _ERROR_COLOR = (255, 80, 80)
 _FONT_SCALE = 4
-_BUTTON_FONT_SIZE = 40
 _IMAGES_DIR = pathlib.Path(__file__).parent.parent / "images"
 
 
@@ -36,15 +34,8 @@ class ScoreEntryScreen:
         self.name = ""
         self.error: str | None = None
         center_x = screen_width // 2
-        button_y = screen_height - 50
-        self.submit_button = UIElement(
-            center_position=(center_x, button_y - 70),
-            text="Save Score",
-            font_size=_BUTTON_FONT_SIZE,
-            action="submit",
-        )
         raw_image = raster.load_rgba(str(_IMAGES_DIR / image_name))
-        max_height = button_y - 190
+        max_height = screen_height - 320
         scale = min(screen_width / raw_image.shape[0], max_height / raw_image.shape[1])
         image_width = int(raw_image.shape[0] * scale)
         image_height = int(raw_image.shape[1] * scale)
@@ -76,9 +67,6 @@ class ScoreEntryScreen:
             ):
                 self.name += event.unicode
                 self.error = None
-        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            if self.submit_button.rect.collidepoint(event.pos):
-                return self._submit()
         return None
 
     def _submit(self) -> str | None:
@@ -90,19 +78,25 @@ class ScoreEntryScreen:
         return "submit"
 
     def update(self, mouse_pos: tuple[int, int]) -> None:
-        self.submit_button.update(mouse_pos)
+        """Keep the screen adapter contract; keyboard input needs no hover state."""
 
     def draw(self, surface: pygame.Surface) -> None:
         surface.fill(_BG_COLOR)
         raster.blit_to_surface(surface, self.image, self.image_rect.topleft)
+        text_y = max(self.image_rect.bottom + 20, surface.get_height() - 260)
         _draw_center(
-            surface, f"SCORE: {self.score}", surface.get_height() - 170, _TEXT_COLOR
+            surface, f"SCORE: {self.score}", text_y, _TEXT_COLOR
         )
         _draw_center(
-            surface, f"NAME: {self.name}", surface.get_height() - 130, _TEXT_COLOR
+            surface, "INSERT NAME", text_y + 45, _TEXT_COLOR
+        )
+        _draw_center(
+            surface, f"> {self.name}_", text_y + 85, _TEXT_COLOR
+        )
+        _draw_center(
+            surface, "PRESS ENTER TO SUBMIT", text_y + 135, _TEXT_COLOR
         )
         if self.error is not None:
             _draw_center(
-                surface, self.error, surface.get_height() - 100, _ERROR_COLOR
+                surface, self.error, text_y + 175, _ERROR_COLOR
             )
-        self.submit_button.draw(surface)
