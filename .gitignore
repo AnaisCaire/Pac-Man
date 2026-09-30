@@ -7,6 +7,9 @@ __pycache__/
 /.hermes/
 /.harness/
 
+# Runtime highscore data configured as scores/high_scores.json
+/scores/
+
 # Local subject/reference documents
 /docs/
 

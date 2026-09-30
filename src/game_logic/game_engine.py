@@ -12,6 +12,11 @@ from typing import cast
 from .clock import ProjectClock
 from .config import Config
 from .maze import Maze
+from ..scores.scores_utils import (
+    load_highscores,
+    record_score,
+    resolve_highscore_path,
+)
 from ..ui.screens.main_menu import MainMenu
 from ..ui.screens.gameover import GameOver
 from ..ui.screens.victory import VictoryScreen
@@ -321,6 +326,10 @@ def game_loop(config: Config) -> None:
     # Post-fix: deferred to #10 asset policy; no new icon asset in this cleanup.
     clock = ProjectClock()
     music = MusicManager.initialize()
+    highscore_path = resolve_highscore_path(
+        getattr(config, "highscore_filename", "scores/high_scores.json")
+    )
+    highscores = load_highscores(highscore_path)
 
     # --- all the windows ------
     state = GameState.MAIN_MENU
@@ -329,6 +338,7 @@ def game_loop(config: Config) -> None:
     music.play("menu")
     menu = MainMenu(WINDOW_SIZE, WINDOW_SIZE + HUB_HEIGHT)
     high_menu = HighscoreScreen(WINDOW_SIZE, WINDOW_SIZE + HUB_HEIGHT)
+    high_menu.set_scores(highscores)
     inst_menu = InstructionsScreen(WINDOW_SIZE, WINDOW_SIZE + HUB_HEIGHT)
     pause_menu = PauseScreen(WINDOW_SIZE, WINDOW_SIZE + HUB_HEIGHT)
     gameover_menu = GameOver(WINDOW_SIZE, WINDOW_SIZE + HUB_HEIGHT)
@@ -349,6 +359,7 @@ def game_loop(config: Config) -> None:
                     music.play("game")
                     state = GameState.IN_GAME
                 elif action == "highscores":
+                    high_menu.set_scores(highscores)
                     state = GameState.HIGHSCORES
                 elif action == "instructions":
                     state = GameState.INSTRUCT
@@ -404,6 +415,7 @@ def game_loop(config: Config) -> None:
                     # Original review note: Maybe winning track?
                     # Post-fix: deferred; no new track assets in #4.
                     music.play("menu")
+                    victory_menu.set_score(session.score)
                 # Original review note: This is going to the next level not
                 # state = GameState.IN_GAME, should load next level instead
                 # Post-fix: kept state transition; next loop loads next level
@@ -416,6 +428,7 @@ def game_loop(config: Config) -> None:
             # keeps existing menu music behavior.
             elif next_state == GameState.GAME_OVER:
                 music.play("menu")
+                gameover_menu.set_score(session.score)
                 state = GameState.GAME_OVER
 
             elif next_state == GameState.MAIN_MENU:
@@ -430,8 +443,17 @@ def game_loop(config: Config) -> None:
         elif state == GameState.GAME_OVER:
             for event in events:
                 gameover_action = gameover_menu.handle_event(event)
-                if gameover_action == "main menu":
-                    state = GameState.MAIN_MENU
+                if gameover_action == "submit":
+                    saved_scores = record_score(
+                        highscore_path,
+                        gameover_menu.score_entry(),
+                    )
+                    if saved_scores is None:
+                        gameover_menu.error = "CANNOT SAVE"
+                    else:
+                        highscores = saved_scores
+                        high_menu.set_scores(highscores)
+                        state = GameState.MAIN_MENU
             gameover_menu.update(pygame.mouse.get_pos())
             gameover_menu.draw(screen)
 
@@ -441,8 +463,17 @@ def game_loop(config: Config) -> None:
         elif state == GameState.VICTORY:
             for event in events:
                 victory_action = victory_menu.handle_event(event)
-                if victory_action == "main menu":
-                    state = GameState.MAIN_MENU
+                if victory_action == "submit":
+                    saved_scores = record_score(
+                        highscore_path,
+                        victory_menu.score_entry(),
+                    )
+                    if saved_scores is None:
+                        victory_menu.error = "CANNOT SAVE"
+                    else:
+                        highscores = saved_scores
+                        high_menu.set_scores(highscores)
+                        state = GameState.MAIN_MENU
             victory_menu.update(pygame.mouse.get_pos())
             victory_menu.draw(screen)
 
