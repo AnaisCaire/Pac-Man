@@ -89,11 +89,10 @@ under `INSERT NAME`, then press Enter to submit. The game stores a deterministic
 Top 10 sorted by descending score then name. Missing or corrupt score files
 recover to an empty board.
 
-`highscore_filename` is a logical relative config path. At runtime it resolves
-under `~/.pacman/`, keeping saves writable outside the source or packaged
-install; absolute or parent-traversal paths fall back to the safe default.
-Writes use a temporary file followed by replacement, so a failed save preserves
-the prior board.
+`highscore_filename` is used exactly as configured. The delivered configuration
+stores scores in `scores/high_scores.json`; each submitted name replaces that
+name's prior entry before the board is sorted. Writes use a temporary file
+followed by replacement, so a failed save preserves the prior board.
 
 ## A-Maze-ing package
 

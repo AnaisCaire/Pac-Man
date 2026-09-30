@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import tempfile
 import unittest
+import json
 from pathlib import Path
 
 from src.scores.model import ScoreEntry
 from src.scores.scores_utils import (
     load_highscores,
     rank_scores,
+    record_score,
     resolve_highscore_path,
     save_highscores,
 )
@@ -68,19 +70,39 @@ class HighscoreTests(unittest.TestCase):
             self.assertEqual(load_highscores(path), scores)
             self.assertTrue(path.is_file())
 
-    def test_unsafe_configured_paths_stay_inside_runtime_data_directory(self) -> None:
+    def test_configured_path_is_used_exactly(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             data_dir = Path(directory)
-            expected = data_dir / "scores" / "high_scores.json"
 
             self.assertEqual(
-                resolve_highscore_path("../escaped.json", data_dir),
-                expected,
+                resolve_highscore_path("scores/high_scores.json", data_dir),
+                Path("scores/high_scores.json"),
             )
             self.assertEqual(
-                resolve_highscore_path("/tmp/escaped.json", data_dir),
-                expected,
+                resolve_highscore_path("../escaped.json", data_dir),
+                Path("../escaped.json"),
             )
+
+    def test_load_preserves_file_order_and_update_replaces_same_name(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "scores.json"
+            path.write_text(json.dumps({"highscores": [
+                {"name": "Mario", "score": 10},
+                {"name": "Ana", "score": 100},
+            ]}), encoding="utf-8")
+
+            self.assertEqual(
+                [entry.name for entry in load_highscores(path)],
+                ["Mario", "Ana"],
+            )
+            scores = record_score(path, ScoreEntry("Mario", 200))
+
+            self.assertIsNotNone(scores)
+            assert scores is not None
+            self.assertEqual([(entry.name, entry.score) for entry in scores], [
+                ("Mario", 200),
+                ("Ana", 100),
+            ])
 
     def test_failed_write_preserves_existing_scores(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

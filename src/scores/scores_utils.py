@@ -13,12 +13,9 @@ _MAX_SCORES = 10
 
 
 def resolve_highscore_path(filename: str, data_dir: Path | None = None) -> Path:
-    """Resolve a logical config filename to a writable runtime location."""
-    path = Path(filename)
-    root = data_dir or Path.home() / ".pacman"
-    if filename.startswith(("/", "\\")) or path.is_absolute() or ".." in path.parts:
-        return root / "scores" / "high_scores.json"
-    return root / path
+    """Use the configured highscore path exactly as supplied."""
+    del data_dir
+    return Path(filename)
 
 
 def rank_scores(scores: list[ScoreEntry]) -> list[ScoreEntry]:
@@ -47,7 +44,7 @@ def load_highscores(path: Path) -> list[ScoreEntry]:
             scores.append(ScoreEntry(raw_score["name"], raw_score["score"]))
         except (KeyError, TypeError, ValueError):
             continue
-    return rank_scores(scores)
+    return scores
 
 
 def save_highscores(path: Path, scores: list[ScoreEntry]) -> bool:
