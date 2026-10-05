@@ -35,6 +35,7 @@ class Config:
     points_per_ghost: int = 200
     seed: int = 42
     level_max_time: int = 90
+    evaluator_mode: bool = False
 
 
 def _warning(field_name: str, message: str) -> None:
@@ -67,6 +68,17 @@ def _int_value(
         _warning(field_name, f"must be >= {minimum}, got {raw}; using {default}")
         return default
     return raw
+
+
+def _bool_value(raw: object, default: bool, field_name: str) -> bool:
+    """Return a real JSON boolean, otherwise the default value."""
+    if isinstance(raw, bool):
+        return raw
+    _warning(
+        field_name,
+        f"expected boolean, got {type(raw).__name__}; using {default}",
+    )
+    return default
 
 
 def _string_value(raw: object, default: str, field_name: str) -> str:
@@ -181,6 +193,11 @@ def _config_from_dict(data: dict[str, Any]) -> Config:
             defaults.level_max_time,
             "level_max_time",
             _MIN_LEVEL_TIME,
+        ),
+        evaluator_mode=_bool_value(
+            data.get("evaluator_mode", defaults.evaluator_mode),
+            defaults.evaluator_mode,
+            "evaluator_mode",
         ),
     )
 
