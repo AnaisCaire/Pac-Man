@@ -27,6 +27,15 @@ class EvaluatorMode:
         """True while Evaluator Freeze holds game time still."""
         return self.frozen_at is not None
 
+    @property
+    def hud_lines(self) -> tuple[str, ...]:
+        """Return the HUD badge lines: none in a normal game."""
+        if not self.enabled:
+            return ()
+        if self.frozen:
+            return ("EVALUATOR", "FREEZE")
+        return ("EVALUATOR",)
+
     def toggle_freeze(self, now: int) -> None:
         """Freeze or unfreeze game time; ignored when evaluator mode is off."""
         if not self.enabled:

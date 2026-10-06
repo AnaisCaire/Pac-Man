@@ -343,7 +343,8 @@ def _run_gameplay(screen: pygame.Surface, clock: ProjectClock,
             lives=player.lives,
             level_num=level_index + 1,
             is_powered_up=player.is_powered_up,
-            hud_y_start=WINDOW_SIZE
+            hud_y_start=WINDOW_SIZE,
+            evaluator_lines=evaluator_mode.hud_lines,
         )
         pygame.display.flip()
         clock.tick(60)

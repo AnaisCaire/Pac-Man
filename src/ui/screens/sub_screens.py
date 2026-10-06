@@ -8,6 +8,14 @@ _IMAGES_DIR = pathlib.Path(__file__).parent.parent / "images"
 BUTTON_FONT_SIZE = 40
 BG_COLOR = (106, 159, 181)
 LOGO_MAX_WIDTH = 600
+# The bitmap font has no underscore, so the config key is described in words.
+EVALUATOR_HELP = (
+    "EVALUATOR MODE: SET EVALUATOR MODE TRUE IN CONFIG",
+    "F: FREEZE GHOSTS AND TIMERS   L: CLEAR LEVEL",
+    "EVALUATOR SCORES ARE NOT SAVED",
+)
+_HELP_FONT_SCALE = 2
+_HELP_LINE_HEIGHT = 22
 
 
 def _handle_button_click(event: pygame.event.Event,
@@ -59,7 +67,8 @@ class InstructionsScreen():
         self.back_btn = UIElement(center_position=(cx, by), text="Back",
                                   font_size=BUTTON_FONT_SIZE, action="back")
         raw_image = raster.load_rgba(str(_IMAGES_DIR / "instructions.png"))
-        max_h = by - 20
+        help_height = len(EVALUATOR_HELP) * _HELP_LINE_HEIGHT
+        max_h = by - 40 - help_height
         scale = min(screen_width / raw_image.shape[0], max_h / raw_image.shape[1])
         img_w = int(raw_image.shape[0] * scale)
         img_h = int(raw_image.shape[1] * scale)
@@ -76,6 +85,12 @@ class InstructionsScreen():
     def draw(self, surface: pygame.Surface) -> None:
         surface.fill(BG_COLOR)
         raster.blit_to_surface(surface, self.image, self.image_rect.topleft)
+        for index, line in enumerate(EVALUATOR_HELP):
+            text = bitmap_font.render_text(line, _HELP_FONT_SCALE, (255, 255, 255))
+            raster.blit_to_surface(surface, text, (
+                surface.get_width() // 2 - text.shape[0] // 2,
+                self.image_rect.bottom + 10 + index * _HELP_LINE_HEIGHT,
+            ))
         self.back_btn.draw(surface)
 
 

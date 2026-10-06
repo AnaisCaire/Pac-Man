@@ -100,6 +100,31 @@ class EvaluatorFreezeTests(unittest.TestCase):
         self.assertEqual(evaluator.game_time(clock.get_ticks_ms()), 1500)
 
 
+class EvaluatorHudTests(unittest.TestCase):
+    """The HUD always shows whether evaluator mode and freeze are active."""
+
+    def test_disabled_mode_shows_nothing(self) -> None:
+        """A normal game has no evaluator badge."""
+        evaluator = EvaluatorMode(enabled=False)
+        evaluator.toggle_freeze(1000)
+
+        self.assertEqual(evaluator.hud_lines, ())
+
+    def test_enabled_mode_shows_badge(self) -> None:
+        """An evaluator run is always visibly marked."""
+        self.assertEqual(EvaluatorMode(enabled=True).hud_lines, ("EVALUATOR",))
+
+    def test_freeze_is_shown_until_unfrozen(self) -> None:
+        """Freeze adds a second line that disappears on unfreeze."""
+        evaluator = EvaluatorMode(enabled=True)
+
+        evaluator.toggle_freeze(1000)
+        self.assertEqual(evaluator.hud_lines, ("EVALUATOR", "FREEZE"))
+
+        evaluator.toggle_freeze(2000)
+        self.assertEqual(evaluator.hud_lines, ("EVALUATOR",))
+
+
 def _level_items() -> tuple[
     dict[tuple[int, int], Pacgum],
     dict[tuple[int, int], SuperPacgum],

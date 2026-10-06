@@ -60,8 +60,68 @@ safe defaults or clamps without discarding valid sibling settings.
 | `make clean` | Remove Python caches and local analysis output. |
 
 
-## evaluator mode:
-Since the delivered config has the mode off, the reviewer will have to set "evaluator_mode": true themselves. The README section in step 7 needs to say so clearly.
+## Evaluator mode (cheat mode)
+
+Evaluator mode exists so a peer reviewer can reach every game state quickly. It
+is off in the delivered `config.json` and cannot be switched on from inside the
+game, so a normal player can never trigger it by accident.
+
+To enable it, copy the configuration, set the key to `true`, and launch with
+the copy:
+
+```jsonc
+"evaluator_mode": true
+```
+
+```console
+make run CONFIG=path/to/evaluator_config.json
+```
+
+While it is enabled, the HUD always shows `EVALUATOR` in the bottom-left
+corner. With it disabled, `F` and `L` do nothing.
+
+| Key | Action | Repeated presses |
+|---|---|---|
+| `F` | Evaluator Freeze: ghosts stop moving; the level timer, power-pellet, respawn, invincibility and ghost state timers stop. Pac-Man still moves, eats, and collides. The HUD adds `FREEZE`. | Toggles. Unfreezing continues every timer from where it stopped, without a jump. |
+| `L` | Clear level: removes every remaining pacgum and super-pacgum, so the normal level-complete transition runs. No points are awarded. | Idempotent. Waits for an ongoing death to resolve first. |
+
+Pause and Evaluator Freeze are different:
+
+| | `Escape` Pause | `F` Evaluator Freeze |
+|---|---|---|
+| Available | Always | Only in evaluator mode |
+| Screen | Pause menu | Normal game view with `FREEZE` on the HUD |
+| Pac-Man | Stopped | Moves, eats, and collides |
+| Ghosts | Stopped | Stopped |
+| Level, power-pellet, respawn and ghost timers | Stopped | Stopped |
+
+The two combine safely: pausing while frozen and resuming leaves the game
+frozen, with no time jump.
+
+Evaluator runs are never saved: the Game Over and Victory screens show
+`EVALUATOR RUN` / `SCORE NOT SAVED` and Enter returns to the main menu. Test
+highscore saving with evaluator mode off.
+
+### Reviewer walkthrough
+
+With evaluator mode enabled:
+
+1. **Freeze and Pause**: press `F` (ghosts and `TIME` stop, Pac-Man moves),
+   `Escape` then Resume (still frozen), `F` again (time continues).
+2. **Power pellet, frightened and eaten ghosts**: freeze, eat a super-pacgum
+   (ghosts stay frightened while frozen), walk into a ghost to eat it, unfreeze
+   and watch it return home.
+3. **Death and Game Over**: freeze and walk into a non-frightened ghost; the
+   respawn waits until unfreeze. Repeat until no lives remain.
+4. **Level and final victory**: press `L` on each level; `L` on level 10 shows
+   the Victory screen.
+5. **Timeout**: set `level_max_time` to its minimum of `15` in the evaluator
+   configuration and wait.
+
+With evaluator mode disabled:
+
+6. **Highscore save**: lose all lives, enter a name, and check the Highscores
+   menu.
 
 ## Gameplay progression and controls
 
