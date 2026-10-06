@@ -8,6 +8,10 @@ key maps to which method.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .entities.items import Pacgum, SuperPacgum
 
 
 @dataclass
@@ -41,3 +45,18 @@ class EvaluatorMode:
         """
         end_time = self.frozen_at if self.frozen_at is not None else now
         return end_time - self.frozen_ms
+
+    # ------- clear level with L -------
+    def clear_level(
+        self,
+        pacgums: dict[tuple[int, int], Pacgum],
+        super_pacgums: dict[tuple[int, int], SuperPacgum],
+    ) -> None:
+        """Remove every collectible so the normal victory check ends the level.
+
+        Awards no points: evaluator runs are not comparable to real scores.
+        """
+        if not self.enabled:
+            return
+        pacgums.clear()
+        super_pacgums.clear()

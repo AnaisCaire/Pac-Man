@@ -59,6 +59,10 @@ safe defaults or clamps without discarding valid sibling settings.
 | `make debug` | Start Pac-Man under Python's built-in `pdb` debugger. |
 | `make clean` | Remove Python caches and local analysis output. |
 
+
+## evaluator mode:
+Since the delivered config has the mode off, the reviewer will have to set "evaluator_mode": true themselves. The README section in step 7 needs to say so clearly.
+
 ## Gameplay progression and controls
 
 - Use either the arrow keys or W/A/S/D to move Pac-Man in the four required

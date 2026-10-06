@@ -5,7 +5,11 @@ from __future__ import annotations
 import unittest
 
 from src.game_logic.clock import ProjectClock
+from src.game_logic.config import Config
+from src.game_logic.entities.items import Pacgum, SuperPacgum
+from src.game_logic.entities.player import Player
 from src.game_logic.evaluator import EvaluatorMode
+from src.game_logic.game_engine import GameState, terminal_state
 
 
 class FakeMonotonic:
@@ -88,6 +92,91 @@ class EvaluatorFreezeTests(unittest.TestCase):
         self.assertEqual(evaluator.game_time(clock.get_ticks_ms()), 1000)
         now.value = 13.5
         self.assertEqual(evaluator.game_time(clock.get_ticks_ms()), 1500)
+
+
+def _level_items() -> tuple[
+    dict[tuple[int, int], Pacgum],
+    dict[tuple[int, int], SuperPacgum],
+]:
+    """Return a small uncleared level: two pacgums and one super-pacgum."""
+    pacgums = {(1, 1): Pacgum(1, 1, 10), (2, 1): Pacgum(2, 1, 10)}
+    super_pacgums = {(3, 1): SuperPacgum(3, 1, 50)}
+    return pacgums, super_pacgums
+
+
+class EvaluatorLevelClearTests(unittest.TestCase):
+    """Level clear must end the level through the normal victory path."""
+
+    def test_disabled_mode_does_not_clear_level(self) -> None:
+        """A normal game keeps every collectible when L is pressed."""
+        evaluator = EvaluatorMode(enabled=False)
+        pacgums, super_pacgums = _level_items()
+
+        evaluator.clear_level(pacgums, super_pacgums)
+
+        self.assertEqual(len(pacgums), 2)
+        self.assertEqual(len(super_pacgums), 1)
+
+    def test_clear_level_empties_collectibles_in_place(self) -> None:
+        """The caller's own dicts are emptied, not replaced."""
+        evaluator = EvaluatorMode(enabled=True)
+        pacgums, super_pacgums = _level_items()
+
+        evaluator.clear_level(pacgums, super_pacgums)
+
+        self.assertEqual(pacgums, {})
+        self.assertEqual(super_pacgums, {})
+
+    def test_cleared_level_is_a_normal_victory(self) -> None:
+        """A live player on a cleared level reaches the real VICTORY outcome."""
+        evaluator = EvaluatorMode(enabled=True)
+        player = Player(1, 1, 16, Config())
+        pacgums, super_pacgums = _level_items()
+
+        evaluator.clear_level(pacgums, super_pacgums)
+
+        self.assertIs(
+            terminal_state(player, pacgums, super_pacgums),
+            GameState.VICTORY,
+        )
+
+    def test_clear_level_is_idempotent(self) -> None:
+        """Pressing L twice is harmless and still yields one victory."""
+        evaluator = EvaluatorMode(enabled=True)
+        player = Player(1, 1, 16, Config())
+        pacgums, super_pacgums = _level_items()
+
+        evaluator.clear_level(pacgums, super_pacgums)
+        evaluator.clear_level(pacgums, super_pacgums)
+
+        self.assertEqual(pacgums, {})
+        self.assertEqual(super_pacgums, {})
+        self.assertIs(
+            terminal_state(player, pacgums, super_pacgums),
+            GameState.VICTORY,
+        )
+
+    def test_clear_level_waits_for_dying_player(self) -> None:
+        """Victory is not declared mid-death; the death resolves first."""
+        evaluator = EvaluatorMode(enabled=True)
+        player = Player(1, 1, 16, Config())
+        pacgums, super_pacgums = _level_items()
+        player.start_death_animation()
+
+        evaluator.clear_level(pacgums, super_pacgums)
+
+        self.assertIsNone(terminal_state(player, pacgums, super_pacgums))
+
+    def test_clear_level_does_not_change_score(self) -> None:
+        """Cleared collectibles award no points to an evaluator run."""
+        evaluator = EvaluatorMode(enabled=True)
+        player = Player(1, 1, 16, Config())
+        player.score = 120
+        pacgums, super_pacgums = _level_items()
+
+        evaluator.clear_level(pacgums, super_pacgums)
+
+        self.assertEqual(player.score, 120)
 
 
 if __name__ == "__main__":
