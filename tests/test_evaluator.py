@@ -4,12 +4,18 @@ from __future__ import annotations
 
 import unittest
 
+import pygame
+
 from src.game_logic.clock import ProjectClock
 from src.game_logic.config import Config
 from src.game_logic.entities.items import Pacgum, SuperPacgum
 from src.game_logic.entities.player import Player
 from src.game_logic.evaluator import EvaluatorMode
-from src.game_logic.game_engine import GameState, terminal_state
+from src.game_logic.game_engine import (
+    GameState,
+    handle_evaluator_input,
+    terminal_state,
+)
 
 
 class FakeMonotonic:
@@ -177,6 +183,96 @@ class EvaluatorLevelClearTests(unittest.TestCase):
         evaluator.clear_level(pacgums, super_pacgums)
 
         self.assertEqual(player.score, 120)
+
+
+def _key(key: int) -> pygame.event.Event:
+    """Return one KEYDOWN event for `key`."""
+    return pygame.event.Event(pygame.KEYDOWN, key=key)
+
+
+class EvaluatorInputTests(unittest.TestCase):
+    """F and L are the only evaluator keys; the adapter owns the mapping."""
+
+    def test_f_toggles_freeze(self) -> None:
+        """F freezes on the first press and unfreezes on the second."""
+        evaluator = EvaluatorMode(enabled=True)
+        pacgums, super_pacgums = _level_items()
+
+        handle_evaluator_input(
+            evaluator, [_key(pygame.K_f)], 1000, pacgums, super_pacgums)
+        self.assertTrue(evaluator.frozen)
+        self.assertEqual(evaluator.game_time(3000), 1000)
+
+        handle_evaluator_input(
+            evaluator, [_key(pygame.K_f)], 3000, pacgums, super_pacgums)
+        self.assertFalse(evaluator.frozen)
+        self.assertEqual(evaluator.game_time(3000), 1000)
+
+    def test_l_clears_level(self) -> None:
+        """L empties the level's collectibles."""
+        evaluator = EvaluatorMode(enabled=True)
+        pacgums, super_pacgums = _level_items()
+
+        handle_evaluator_input(
+            evaluator, [_key(pygame.K_l)], 1000, pacgums, super_pacgums)
+
+        self.assertEqual(pacgums, {})
+        self.assertEqual(super_pacgums, {})
+
+    def test_disabled_mode_ignores_evaluator_keys(self) -> None:
+        """A normal game is unaffected by F and L."""
+        evaluator = EvaluatorMode(enabled=False)
+        pacgums, super_pacgums = _level_items()
+
+        handle_evaluator_input(
+            evaluator,
+            [_key(pygame.K_f), _key(pygame.K_l)],
+            1000,
+            pacgums,
+            super_pacgums,
+        )
+
+        self.assertFalse(evaluator.frozen)
+        self.assertEqual(len(pacgums), 2)
+        self.assertEqual(len(super_pacgums), 1)
+
+    def test_other_keys_and_events_are_ignored(self) -> None:
+        """Movement keys, Esc and key releases never trigger evaluator aids."""
+        evaluator = EvaluatorMode(enabled=True)
+        pacgums, super_pacgums = _level_items()
+
+        handle_evaluator_input(
+            evaluator,
+            [
+                _key(pygame.K_UP),
+                _key(pygame.K_d),
+                _key(pygame.K_ESCAPE),
+                pygame.event.Event(pygame.KEYUP, key=pygame.K_f),
+                pygame.event.Event(pygame.KEYUP, key=pygame.K_l),
+            ],
+            1000,
+            pacgums,
+            super_pacgums,
+        )
+
+        self.assertFalse(evaluator.frozen)
+        self.assertEqual(len(pacgums), 2)
+
+    def test_two_f_presses_in_one_frame_cancel_out(self) -> None:
+        """Each press is one toggle, even when both land in the same frame."""
+        evaluator = EvaluatorMode(enabled=True)
+        pacgums, super_pacgums = _level_items()
+
+        handle_evaluator_input(
+            evaluator,
+            [_key(pygame.K_f), _key(pygame.K_f)],
+            1000,
+            pacgums,
+            super_pacgums,
+        )
+
+        self.assertFalse(evaluator.frozen)
+        self.assertEqual(evaluator.game_time(2000), 2000)
 
 
 if __name__ == "__main__":

@@ -37,6 +37,8 @@ from ..ui.music_manager import MusicManager
 from .entities.player import Player, handle_input, resolve_collisions
 from .entities.ghost_types import Blinky, Pinky, Inky, Clyde
 from .entities.ghosts import Ghost, MIN_RESPAWN_DISTANCE
+from .entities.items import Pacgum, SuperPacgum
+from .evaluator import EvaluatorMode
 
 
 WINDOW_SIZE = 800
@@ -163,6 +165,27 @@ def terminal_state(
     return None
 
 
+def handle_evaluator_input(
+    evaluator: EvaluatorMode,
+    events: list[pygame.event.Event],
+    now: int,
+    pacgums: dict[tuple[int, int], Pacgum],
+    super_pacgums: dict[tuple[int, int], SuperPacgum],
+) -> None:
+    """Map F (freeze) and L (level clear) key presses to evaluator commands.
+
+    `now` must be project-clock time, not evaluator game time: while frozen,
+    game time stands still, so the freeze would measure as 0 ms long.
+    """
+    for event in events:
+        if event.type != pygame.KEYDOWN:
+            continue
+        if event.key == pygame.K_f:
+            evaluator.toggle_freeze(now)
+        elif event.key == pygame.K_l:
+            evaluator.clear_level(pacgums, super_pacgums)
+
+
 def _run_gameplay(screen: pygame.Surface, clock: ProjectClock,
                   config: Config,
                   pause_menu: PauseScreen,
@@ -200,6 +223,7 @@ def _run_gameplay(screen: pygame.Surface, clock: ProjectClock,
 
     simulation_start = clock.get_ticks_ms()
     level_timer = LevelTimer(simulation_start)
+    evaluator_mode = EvaluatorMode(enabled=config.evaluator_mode)
 
     ghost_positions = maze.place_ghosts(spawn)
     ghost_classes = [Blinky, Pinky, Inky, Clyde]
@@ -214,9 +238,13 @@ def _run_gameplay(screen: pygame.Surface, clock: ProjectClock,
     death_transition_handled = False
 
     while True:
-        current_time = clock.get_ticks_ms()
         events = pygame.event.get()
         handle_input(player, events)
+        handle_evaluator_input(evaluator_mode,
+                               events,
+                               clock.get_ticks_ms(),
+                               pacgums,
+                               super_pacgums)
         for event in events:
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -255,7 +283,9 @@ def _run_gameplay(screen: pygame.Surface, clock: ProjectClock,
                     clock.tick(60)
                 clock.resume()
 
-        current_time = clock.get_ticks_ms()
+        # Every rule below reads evaluator game time, so one freeze stops the
+        # level timer, power-up, respawn and ghost timers together.
+        current_time = evaluator_mode.game_time(clock.get_ticks_ms())
         if player.is_dying or (not player.is_alive and player.lives > 0):
             level_timer.pause(current_time)
         else:
@@ -293,7 +323,9 @@ def _run_gameplay(screen: pygame.Surface, clock: ProjectClock,
         if outcome is not None:
             return (outcome, player.score, player.lives)
 
-        if player.is_alive and not player.is_dying:
+        # Pac-Man keeps moving during a freeze (frame-based); ghosts do not.
+        ghosts_move = player.is_alive and not player.is_dying
+        if ghosts_move and not evaluator_mode.frozen:
             for ghost in ghost_list:
                 ghost.update(current_time, maze)
 
