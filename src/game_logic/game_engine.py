@@ -20,6 +20,7 @@ from ..scores.scores_utils import (
 from ..ui.screens.main_menu import MainMenu
 from ..ui.screens.gameover import GameOver
 from ..ui.screens.victory import VictoryScreen
+from ..ui.screens.score_entry import MENU_ACTION
 from ..ui.screens.sub_screens import (
     HighscoreScreen,
     InstructionsScreen,
@@ -447,7 +448,10 @@ def game_loop(config: Config) -> None:
                     # Original review note: Maybe winning track?
                     # Post-fix: deferred; no new track assets in #4.
                     music.play("menu")
-                    victory_menu.set_score(session.score)
+                    victory_menu.set_score(
+                        session.score,
+                        evaluator_run=config.evaluator_mode,
+                    )
                 # Original review note: This is going to the next level not
                 # state = GameState.IN_GAME, should load next level instead
                 # Post-fix: kept state transition; next loop loads next level
@@ -460,7 +464,10 @@ def game_loop(config: Config) -> None:
             # keeps existing menu music behavior.
             elif next_state == GameState.GAME_OVER:
                 music.play("menu")
-                gameover_menu.set_score(session.score)
+                gameover_menu.set_score(
+                    session.score,
+                    evaluator_run=config.evaluator_mode,
+                )
                 state = GameState.GAME_OVER
 
             elif next_state == GameState.MAIN_MENU:
@@ -475,7 +482,10 @@ def game_loop(config: Config) -> None:
         elif state == GameState.GAME_OVER:
             for event in events:
                 gameover_action = gameover_menu.handle_event(event)
-                if gameover_action == "submit":
+                # Evaluator runs leave here without ever reaching record_score.
+                if gameover_action == MENU_ACTION:
+                    state = GameState.MAIN_MENU
+                elif gameover_action == "submit":
                     saved_scores = record_score(
                         highscore_path,
                         gameover_menu.score_entry(),
@@ -495,7 +505,10 @@ def game_loop(config: Config) -> None:
         elif state == GameState.VICTORY:
             for event in events:
                 victory_action = victory_menu.handle_event(event)
-                if victory_action == "submit":
+                # Evaluator runs leave here without ever reaching record_score.
+                if victory_action == MENU_ACTION:
+                    state = GameState.MAIN_MENU
+                elif victory_action == "submit":
                     saved_scores = record_score(
                         highscore_path,
                         victory_menu.score_entry(),

@@ -14,6 +14,8 @@ _TEXT_COLOR = (255, 255, 255)
 _ERROR_COLOR = (255, 80, 80)
 _FONT_SCALE = 4
 _IMAGES_DIR = pathlib.Path(__file__).parent.parent / "images"
+# Returned instead of "submit" when an evaluator run must not be saved.
+MENU_ACTION = "menu"
 
 
 def _draw_center(surface: pygame.Surface, text: str, y: int,
@@ -42,18 +44,23 @@ class ScoreEntryScreen:
         self.image = raster.nearest_neighbor_scale(raw_image, image_width, image_height)
         self.image_rect = pygame.Rect((0, 0), (image_width, image_height))
         self.image_rect.center = (center_x, image_height // 2 + 10)
+        self.evaluator_run = False
 
-    def set_score(self, score: int) -> None:
-        """Prepare a fresh name entry for the completed game score."""
+    def set_score(self, score: int, evaluator_run: bool = False) -> None:
+        """Prepare a fresh end screen; evaluator runs skip name entry."""
         self.score = score
         self.name = ""
         self.error = None
+        self.evaluator_run = evaluator_run
 
     def score_entry(self) -> ScoreEntry:
         """Return the current input or raise a precise validation error."""
         return ScoreEntry(self.name, self.score)
 
     def handle_event(self, event: pygame.event.Event) -> str | None:
+        if self.evaluator_run:
+            is_enter = event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN
+            return MENU_ACTION if is_enter else None
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_BACKSPACE:
                 self.name = self.name[:-1]
@@ -87,6 +94,13 @@ class ScoreEntryScreen:
         _draw_center(
             surface, f"SCORE: {self.score}", text_y, _TEXT_COLOR
         )
+        if self.evaluator_run:
+            _draw_center(surface, "EVALUATOR RUN", text_y + 45, _ERROR_COLOR)
+            _draw_center(surface, "SCORE NOT SAVED", text_y + 85, _ERROR_COLOR)
+            _draw_center(
+                surface, "PRESS ENTER FOR MENU", text_y + 135, _TEXT_COLOR
+            )
+            return
         _draw_center(
             surface, "INSERT NAME", text_y + 45, _TEXT_COLOR
         )
