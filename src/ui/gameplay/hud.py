@@ -68,7 +68,7 @@ def draw_legend(surface: pygame.Surface,
     for index, line in enumerate(evaluator_lines):
         color = EVALUATOR_COLORS[min(index, len(EVALUATOR_COLORS) - 1)]
         badges.append(bitmap_font.render_text(line, EVALUATOR_FONT_SCALE, color))
-    badge_x = 20
+    badge_x = 30
     badge_y = surface.get_height() - max(
         (badge.shape[1] for badge in badges),
         default=0,

@@ -52,13 +52,14 @@ class HudEvaluatorBadgeTests(unittest.TestCase):
         with patch("src.ui.gameplay.hud._blit_midleft") as blit_midleft:
             self.drawn_texts(("EVALUATOR FREEZE", "SELECTED BLINKY"))
 
-        badge_centers = [
-            call.args[2][1]
+        badge_positions = [
+            call.args[2]
             for call in blit_midleft.call_args_list
             if call.args[2][1] > 870
         ]
-        self.assertEqual(len(badge_centers), 2)
-        self.assertTrue(all(y > 870 for y in badge_centers))
+        self.assertEqual(len(badge_positions), 2)
+        self.assertEqual(badge_positions[0][0], 30)
+        self.assertTrue(all(y > 870 for _, y in badge_positions))
 
 
 if __name__ == "__main__":
