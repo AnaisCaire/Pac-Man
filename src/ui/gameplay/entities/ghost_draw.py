@@ -8,6 +8,7 @@ from ...gfx import raster
 
 # entities/ → gameplay/ → ui/ → images/
 _IMAGES_DIR = pathlib.Path(__file__).parent.parent.parent / "images"
+GHOST_INSET = 2
 
 # keyed by sprite name → raw RGBA array (populated on first draw call)
 _GHOST_IMAGES: dict[str, np.ndarray] = {}
@@ -54,10 +55,10 @@ def draw_ghosts(surface: pygame.Surface, ghosts: list[Ghost], tile_size: int,
         if ghost.is_dead:
             continue  # invisible while returning home
 
-        image = _scaled_image(_pick_image_key(ghost), tile_size)
+        image = _scaled_image(_pick_image_key(ghost), tile_size - 2 * GHOST_INSET)
 
         px = offset_x + (ghost.grid_x + ghost.progress *
-                         ghost.current_direction[0]) * tile_size
+                         ghost.current_direction[0]) * tile_size + GHOST_INSET
         py = offset_y + (ghost.grid_y + ghost.progress *
-                         ghost.current_direction[1]) * tile_size
+                         ghost.current_direction[1]) * tile_size + GHOST_INSET
         raster.blit_to_surface(surface, image, (int(px), int(py)))

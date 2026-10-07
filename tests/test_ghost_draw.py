@@ -7,6 +7,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import numpy as np
+import pygame
 
 from src.game_logic.config import Config
 from src.game_logic.entities.ghosts import Ghost, GhostState
@@ -56,6 +57,27 @@ class GhostSpriteTests(unittest.TestCase):
         self.assertEqual(ghost_draw._pick_image_key(ghost), "scared_right")
         ghost.current_direction = (0, 1)
         self.assertEqual(ghost_draw._pick_image_key(ghost), "scared_left")
+
+    def test_draw_insets_ghost_two_pixels_inside_its_tile(self) -> None:
+        player = Player(1, 1, 16, Config())
+        ghost = Ghost(2, 3, 16, player, 0)
+        surface = pygame.Surface((100, 100))
+        image = np.zeros((12, 12, 4), dtype=np.uint8)
+
+        with (
+            patch.object(ghost_draw, "_load_ghost_images"),
+            patch.object(ghost_draw, "_pick_image_key", return_value="red_left"),
+            patch.object(ghost_draw, "_scaled_image", return_value=image) as scale,
+            patch.object(ghost_draw.raster, "blit_to_surface") as blit,
+        ):
+            ghost_draw.draw_ghosts(surface, [ghost], 16, 5, 7)
+
+        scale.assert_called_once_with("red_left", 12)
+        blit.assert_called_once_with(
+            surface,
+            image,
+            (5 + 2 * 16 + 2, 7 + 3 * 16 + 2),
+        )
 
 
 if __name__ == "__main__":
