@@ -11,7 +11,12 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from .entities.ghosts import Ghost
     from .entities.items import Pacgum, SuperPacgum
+    from .maze import Maze
+
+
+GHOST_NAMES = ("BLINKY", "PINKY", "INKY", "CLYDE")
 
 
 @dataclass
@@ -21,6 +26,7 @@ class EvaluatorMode:
     enabled: bool
     frozen_at: int | None = None
     frozen_ms: int = 0
+    selected_ghost: int | None = None
 
     @property
     def frozen(self) -> bool:
@@ -32,9 +38,12 @@ class EvaluatorMode:
         """Return the HUD badge lines: none in a normal game."""
         if not self.enabled:
             return ()
+        lines = ["EVALUATOR"]
         if self.frozen:
-            return ("EVALUATOR", "FREEZE")
-        return ("EVALUATOR",)
+            lines.append("FREEZE")
+        if self.selected_ghost is not None:
+            lines.append(f"SELECTED {GHOST_NAMES[self.selected_ghost]}")
+        return tuple(lines)
 
     def toggle_freeze(self, now: int) -> None:
         """Freeze or unfreeze game time; ignored when evaluator mode is off."""
@@ -55,7 +64,36 @@ class EvaluatorMode:
         end_time = self.frozen_at if self.frozen_at is not None else now
         return end_time - self.frozen_ms
 
-    # ------- clear level with L -------
+    def select_next_ghost(self, ghost_count: int) -> None:
+        """Cycle the selected ghost while evaluator freeze is active."""
+        if not self.enabled or not self.frozen or ghost_count == 0:
+            return
+        self.selected_ghost = (
+            0 if self.selected_ghost is None
+            else (self.selected_ghost + 1) % ghost_count
+        )
+
+    def move_selected_ghost(
+        self,
+        ghosts: list[Ghost],
+        maze: Maze,
+        direction: tuple[int, int],
+    ) -> None:
+        """Move the selected frozen ghost one walkable tile."""
+        if not self.enabled or not self.frozen or self.selected_ghost is None:
+            return
+        ghost = ghosts[self.selected_ghost]
+        target_x = ghost.grid_x + direction[0]
+        target_y = ghost.grid_y + direction[1]
+        if not (0 <= target_x < maze.width and 0 <= target_y < maze.height):
+            return
+        if maze.is_wall(target_x, target_y):
+            return
+        ghost.grid_x, ghost.grid_y = target_x, target_y
+        ghost.current_direction = (0, 0)
+        ghost.progress = 0.0
+
+    # ------- clear level with C -------
     def clear_level(
         self,
         pacgums: dict[tuple[int, int], Pacgum],

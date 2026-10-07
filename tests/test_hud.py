@@ -40,12 +40,13 @@ class HudEvaluatorBadgeTests(unittest.TestCase):
         self.assertNotIn("EVALUATOR", texts)
         self.assertNotIn("FREEZE", texts)
 
-    def test_badge_and_freeze_are_drawn(self) -> None:
+    def test_badge_freeze_and_selection_are_drawn(self) -> None:
         """Each evaluator line is rendered on the HUD."""
-        texts = self.drawn_texts(("EVALUATOR", "FREEZE"))
+        texts = self.drawn_texts(("EVALUATOR", "FREEZE", "SELECTED BLINKY"))
 
         self.assertIn("EVALUATOR", texts)
         self.assertIn("FREEZE", texts)
+        self.assertIn("SELECTED BLINKY", texts)
 
 
 if __name__ == "__main__":

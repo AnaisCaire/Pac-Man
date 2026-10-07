@@ -3,7 +3,7 @@ import pygame
 from ..gfx import bitmap_font, raster
 
 FONT_SCALE = 4
-EVALUATOR_FONT_SCALE = 3
+EVALUATOR_FONT_SCALE = 2
 EVALUATOR_COLORS = ((255, 140, 0), (0, 255, 255))
 
 
@@ -64,9 +64,8 @@ def draw_legend(surface: pygame.Surface,
             "POWER PELLET ACTIVE!", FONT_SCALE, POWER_COLOR)
         _blit_center(surface, power_text, (screen_width // 2, bottom_row_y))
 
-    # Stacked in the bottom-left corner: "EVALUATOR FREEZE" is too wide for
-    # one HUD line next to the centered level text.
+    # Stack the evaluator state so it stays clear of the centered level text.
     for index, line in enumerate(evaluator_lines):
         color = EVALUATOR_COLORS[min(index, len(EVALUATOR_COLORS) - 1)]
         badge_text = bitmap_font.render_text(line, EVALUATOR_FONT_SCALE, color)
-        _blit_midleft(surface, badge_text, (20, hud_y_start + 66 + index * 22))
+        _blit_midleft(surface, badge_text, (20, hud_y_start + 54 + index * 18))

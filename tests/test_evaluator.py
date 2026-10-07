@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import unittest
+from unittest.mock import Mock
 
 import pygame
 
 from src.game_logic.clock import ProjectClock
 from src.game_logic.config import Config
+from src.game_logic.entities.ghosts import Ghost
 from src.game_logic.entities.items import Pacgum, SuperPacgum
 from src.game_logic.entities.player import Player
 from src.game_logic.evaluator import EvaluatorMode
@@ -16,6 +18,7 @@ from src.game_logic.game_engine import (
     handle_evaluator_input,
     terminal_state,
 )
+from src.game_logic.maze import Maze
 
 
 class FakeMonotonic:
@@ -139,7 +142,7 @@ class EvaluatorLevelClearTests(unittest.TestCase):
     """Level clear must end the level through the normal victory path."""
 
     def test_disabled_mode_does_not_clear_level(self) -> None:
-        """A normal game keeps every collectible when L is pressed."""
+        """A normal game keeps every collectible when C is pressed."""
         evaluator = EvaluatorMode(enabled=False)
         pacgums, super_pacgums = _level_items()
 
@@ -172,7 +175,7 @@ class EvaluatorLevelClearTests(unittest.TestCase):
         )
 
     def test_clear_level_is_idempotent(self) -> None:
-        """Pressing L twice is harmless and still yields one victory."""
+        """Pressing C twice is harmless and still yields one victory."""
         evaluator = EvaluatorMode(enabled=True)
         player = Player(1, 1, 16, Config())
         pacgums, super_pacgums = _level_items()
@@ -215,49 +218,78 @@ def _key(key: int) -> pygame.event.Event:
     return pygame.event.Event(pygame.KEYDOWN, key=key)
 
 
+def _ghost_controls() -> tuple[list[Ghost], Mock]:
+    """Return four movable ghosts and a small open maze adapter."""
+    player = Player(1, 1, 16, Config())
+    ghosts = [Ghost(2, 2, 16, player, 0) for _ in range(4)]
+    maze = Mock(spec=Maze)
+    maze.width = 5
+    maze.height = 5
+    maze.is_wall.return_value = False
+    return ghosts, maze
+
+
 class EvaluatorInputTests(unittest.TestCase):
-    """F and L are the only evaluator keys; the adapter owns the mapping."""
+    """The input adapter owns every evaluator key mapping."""
 
     def test_f_toggles_freeze(self) -> None:
         """F freezes on the first press and unfreezes on the second."""
         evaluator = EvaluatorMode(enabled=True)
         pacgums, super_pacgums = _level_items()
+        ghosts, maze = _ghost_controls()
 
         handle_evaluator_input(
-            evaluator, [_key(pygame.K_f)], 1000, pacgums, super_pacgums)
+            evaluator, [_key(pygame.K_f)], 1000, pacgums, super_pacgums,
+            ghosts, maze)
         self.assertTrue(evaluator.frozen)
         self.assertEqual(evaluator.game_time(3000), 1000)
 
         handle_evaluator_input(
-            evaluator, [_key(pygame.K_f)], 3000, pacgums, super_pacgums)
+            evaluator, [_key(pygame.K_f)], 3000, pacgums, super_pacgums,
+            ghosts, maze)
         self.assertFalse(evaluator.frozen)
         self.assertEqual(evaluator.game_time(3000), 1000)
 
-    def test_l_clears_level(self) -> None:
-        """L empties the level's collectibles."""
+    def test_c_clears_level(self) -> None:
+        """C empties the level's collectibles."""
         evaluator = EvaluatorMode(enabled=True)
         pacgums, super_pacgums = _level_items()
+        ghosts, maze = _ghost_controls()
 
         handle_evaluator_input(
-            evaluator, [_key(pygame.K_l)], 1000, pacgums, super_pacgums)
+            evaluator, [_key(pygame.K_c)], 1000, pacgums, super_pacgums,
+            ghosts, maze)
 
         self.assertEqual(pacgums, {})
         self.assertEqual(super_pacgums, {})
 
     def test_disabled_mode_ignores_evaluator_keys(self) -> None:
-        """A normal game is unaffected by F and L."""
+        """A normal game is unaffected by evaluator keys."""
         evaluator = EvaluatorMode(enabled=False)
         pacgums, super_pacgums = _level_items()
+        ghosts, maze = _ghost_controls()
 
         handle_evaluator_input(
             evaluator,
-            [_key(pygame.K_f), _key(pygame.K_l)],
+            [
+                _key(pygame.K_f),
+                _key(pygame.K_g),
+                _key(pygame.K_i),
+                _key(pygame.K_j),
+                _key(pygame.K_k),
+                _key(pygame.K_l),
+                _key(pygame.K_c),
+            ],
             1000,
             pacgums,
             super_pacgums,
+            ghosts,
+            maze,
         )
 
         self.assertFalse(evaluator.frozen)
+        self.assertIsNone(evaluator.selected_ghost)
+        self.assertEqual((ghosts[0].grid_x, ghosts[0].grid_y), (2, 2))
         self.assertEqual(len(pacgums), 2)
         self.assertEqual(len(super_pacgums), 1)
 
@@ -265,6 +297,7 @@ class EvaluatorInputTests(unittest.TestCase):
         """Movement keys, Esc and key releases never trigger evaluator aids."""
         evaluator = EvaluatorMode(enabled=True)
         pacgums, super_pacgums = _level_items()
+        ghosts, maze = _ghost_controls()
 
         handle_evaluator_input(
             evaluator,
@@ -273,11 +306,13 @@ class EvaluatorInputTests(unittest.TestCase):
                 _key(pygame.K_d),
                 _key(pygame.K_ESCAPE),
                 pygame.event.Event(pygame.KEYUP, key=pygame.K_f),
-                pygame.event.Event(pygame.KEYUP, key=pygame.K_l),
+                pygame.event.Event(pygame.KEYUP, key=pygame.K_c),
             ],
             1000,
             pacgums,
             super_pacgums,
+            ghosts,
+            maze,
         )
 
         self.assertFalse(evaluator.frozen)
@@ -287,6 +322,7 @@ class EvaluatorInputTests(unittest.TestCase):
         """Each press is one toggle, even when both land in the same frame."""
         evaluator = EvaluatorMode(enabled=True)
         pacgums, super_pacgums = _level_items()
+        ghosts, maze = _ghost_controls()
 
         handle_evaluator_input(
             evaluator,
@@ -294,10 +330,69 @@ class EvaluatorInputTests(unittest.TestCase):
             1000,
             pacgums,
             super_pacgums,
+            ghosts,
+            maze,
         )
 
         self.assertFalse(evaluator.frozen)
         self.assertEqual(evaluator.game_time(2000), 2000)
+
+    def test_g_selects_only_during_freeze(self) -> None:
+        """G exposes the selected ghost without affecting normal gameplay."""
+        evaluator = EvaluatorMode(enabled=True)
+        pacgums, super_pacgums = _level_items()
+        ghosts, maze = _ghost_controls()
+
+        handle_evaluator_input(
+            evaluator, [_key(pygame.K_g)], 1000, pacgums, super_pacgums,
+            ghosts, maze)
+        self.assertIsNone(evaluator.selected_ghost)
+
+        handle_evaluator_input(
+            evaluator, [_key(pygame.K_f), _key(pygame.K_g)], 1000,
+            pacgums, super_pacgums, ghosts, maze)
+
+        self.assertEqual(evaluator.selected_ghost, 0)
+        self.assertIn("SELECTED BLINKY", evaluator.hud_lines)
+
+        for expected_name in ("PINKY", "INKY", "CLYDE", "BLINKY"):
+            handle_evaluator_input(
+                evaluator, [_key(pygame.K_g)], 1000, pacgums,
+                super_pacgums, ghosts, maze)
+            self.assertIn(f"SELECTED {expected_name}", evaluator.hud_lines)
+
+    def test_ijkl_moves_selected_ghost_only_to_walkable_tiles(self) -> None:
+        """Manual movement normalizes position and stops outside Freeze."""
+        evaluator = EvaluatorMode(enabled=True)
+        pacgums, super_pacgums = _level_items()
+        ghosts, maze = _ghost_controls()
+        ghosts[0].progress = 0.5
+        ghosts[0].current_direction = (1, 0)
+
+        handle_evaluator_input(
+            evaluator,
+            [_key(pygame.K_f), _key(pygame.K_g), _key(pygame.K_l)],
+            1000,
+            pacgums,
+            super_pacgums,
+            ghosts,
+            maze,
+        )
+
+        self.assertEqual((ghosts[0].grid_x, ghosts[0].grid_y), (3, 2))
+        self.assertEqual(ghosts[0].progress, 0.0)
+        self.assertEqual(ghosts[0].current_direction, (0, 0))
+
+        maze.is_wall.return_value = True
+        handle_evaluator_input(
+            evaluator, [_key(pygame.K_l)], 1000, pacgums, super_pacgums,
+            ghosts, maze)
+        self.assertEqual((ghosts[0].grid_x, ghosts[0].grid_y), (3, 2))
+
+        handle_evaluator_input(
+            evaluator, [_key(pygame.K_f), _key(pygame.K_j)], 2000,
+            pacgums, super_pacgums, ghosts, maze)
+        self.assertEqual((ghosts[0].grid_x, ghosts[0].grid_y), (3, 2))
 
 
 if __name__ == "__main__":

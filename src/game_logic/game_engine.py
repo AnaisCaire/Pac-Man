@@ -172,19 +172,35 @@ def handle_evaluator_input(
     now: int,
     pacgums: dict[tuple[int, int], Pacgum],
     super_pacgums: dict[tuple[int, int], SuperPacgum],
+    ghosts: list[Ghost],
+    maze: Maze,
 ) -> None:
-    """Map F (freeze) and L (level clear) key presses to evaluator commands.
+    """Map evaluator key presses to application-level commands.
 
     `now` must be project-clock time, not evaluator game time: while frozen,
     game time stands still, so the freeze would measure as 0 ms long.
     """
+    manual_directions = {
+        pygame.K_i: (0, -1),
+        pygame.K_k: (0, 1),
+        pygame.K_j: (-1, 0),
+        pygame.K_l: (1, 0),
+    }
     for event in events:
         if event.type != pygame.KEYDOWN:
             continue
         if event.key == pygame.K_f:
             evaluator.toggle_freeze(now)
-        elif event.key == pygame.K_l:
+        elif event.key == pygame.K_g:
+            evaluator.select_next_ghost(len(ghosts))
+        elif event.key == pygame.K_c:
             evaluator.clear_level(pacgums, super_pacgums)
+        elif event.key in manual_directions:
+            evaluator.move_selected_ghost(
+                ghosts,
+                maze,
+                manual_directions[event.key],
+            )
 
 
 def _run_gameplay(screen: pygame.Surface, clock: ProjectClock,
@@ -245,7 +261,9 @@ def _run_gameplay(screen: pygame.Surface, clock: ProjectClock,
                                events,
                                clock.get_ticks_ms(),
                                pacgums,
-                               super_pacgums)
+                               super_pacgums,
+                               ghost_list,
+                               maze)
         for event in events:
             if event.type == pygame.QUIT:
                 pygame.quit()

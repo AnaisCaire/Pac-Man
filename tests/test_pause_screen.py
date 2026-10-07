@@ -49,7 +49,7 @@ class InstructionsScreenTests(unittest.TestCase):
     """Evaluator controls are documented in-game, not hidden."""
 
     def test_evaluator_controls_are_drawn(self) -> None:
-        """The Instructions screen explains how to enable and use F and L."""
+        """Instructions explain how to enable and use evaluator controls."""
         with patch(
             "src.ui.screens.sub_screens.raster.load_rgba",
             return_value=np.zeros((1, 1, 4), dtype=np.uint8),
@@ -67,6 +67,9 @@ class InstructionsScreenTests(unittest.TestCase):
         self.assertIn("EVALUATOR MODE", text)
         self.assertIn("CONFIG", text)
         self.assertIn("F:", text)
+        self.assertIn("G:", text)
+        self.assertIn("IJKL:", text)
+        self.assertIn("C:", text)
         self.assertIn("L:", text)
         self.assertIn("NOT SAVED", text)
 

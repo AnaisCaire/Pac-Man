@@ -78,12 +78,14 @@ make run CONFIG=path/to/evaluator_config.json
 ```
 
 While it is enabled, the HUD always shows `EVALUATOR` in the bottom-left
-corner. With it disabled, `F` and `L` do nothing.
+corner. With it disabled, all evaluator keys do nothing.
 
 | Key | Action | Repeated presses |
 |---|---|---|
 | `F` | Evaluator Freeze: ghosts stop moving; the level timer, power-pellet, respawn, invincibility and ghost state timers stop. Pac-Man still moves, eats, and collides. The HUD adds `FREEZE`. | Toggles. Unfreezing continues every timer from where it stopped, without a jump. |
-| `L` | Clear level: removes every remaining pacgum and super-pacgum, so the normal level-complete transition runs. No points are awarded. | Idempotent. Waits for an ongoing death to resolve first. |
+| `G` | Select the next ghost while frozen. The HUD shows `SELECTED` and its name. | Cycles Blinky, Pinky, Inky, Clyde. Does nothing outside Freeze. |
+| `I` `J` `K` `L` | Move the selected ghost one walkable tile up, left, down, or right while frozen. | Each valid key press moves one tile; walls and map edges are ignored. |
+| `C` | Clear level: removes every remaining pacgum and super-pacgum, so the normal level-complete transition runs. No points are awarded. | Idempotent. Waits for an ongoing death to resolve first. |
 
 Pause and Evaluator Freeze are different:
 
@@ -108,19 +110,21 @@ With evaluator mode enabled:
 
 1. **Freeze and Pause**: press `F` (ghosts and `TIME` stop, Pac-Man moves),
    `Escape` then Resume (still frozen), `F` again (time continues).
-2. **Power pellet, frightened and eaten ghosts**: freeze, eat a super-pacgum
-   (ghosts stay frightened while frozen), walk into a ghost to eat it, unfreeze
-   and watch it return home.
-3. **Death and Game Over**: freeze and walk into a non-frightened ghost; the
-   respawn waits until unfreeze. Repeat until no lives remain.
-4. **Level and final victory**: press `L` on each level; `L` on level 10 shows
+2. **Ghost selection and movement**: while frozen, press `G` to cycle through
+   all four ghosts and use `I`/`J`/`K`/`L` to place the selected ghost.
+3. **Power pellet, frightened and eaten ghosts**: freeze, eat a super-pacgum
+   (ghosts stay frightened while frozen), place a ghost on Pac-Man to eat it,
+   unfreeze and watch it return home.
+4. **Death and Game Over**: freeze and place a non-frightened ghost on Pac-Man;
+   the respawn waits until unfreeze. Repeat until no lives remain.
+5. **Level and final victory**: press `C` on each level; `C` on level 10 shows
    the Victory screen.
-5. **Timeout**: set `level_max_time` to its minimum of `15` in the evaluator
+6. **Timeout**: set `level_max_time` to its minimum of `15` in the evaluator
    configuration and wait.
 
 With evaluator mode disabled:
 
-6. **Highscore save**: lose all lives, enter a name, and check the Highscores
+7. **Highscore save**: lose all lives, enter a name, and check the Highscores
    menu.
 
 ## Gameplay progression and controls

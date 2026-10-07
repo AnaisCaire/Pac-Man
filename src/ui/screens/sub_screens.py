@@ -11,7 +11,8 @@ LOGO_MAX_WIDTH = 600
 # The bitmap font has no underscore, so the config key is described in words.
 EVALUATOR_HELP = (
     "EVALUATOR MODE: SET EVALUATOR MODE TRUE IN CONFIG",
-    "F: FREEZE GHOSTS AND TIMERS   L: CLEAR LEVEL",
+    "F: FREEZE   G: SELECT GHOST   IJKL: MOVE GHOST",
+    "C: CLEAR LEVEL",
     "EVALUATOR SCORES ARE NOT SAVED",
 )
 _HELP_FONT_SCALE = 2
