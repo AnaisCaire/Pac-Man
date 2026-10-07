@@ -64,8 +64,15 @@ def draw_legend(surface: pygame.Surface,
             "POWER PELLET ACTIVE!", FONT_SCALE, POWER_COLOR)
         _blit_center(surface, power_text, (screen_width // 2, bottom_row_y))
 
-    # Stack the evaluator state so it stays clear of the centered level text.
+    badges = []
     for index, line in enumerate(evaluator_lines):
         color = EVALUATOR_COLORS[min(index, len(EVALUATOR_COLORS) - 1)]
-        badge_text = bitmap_font.render_text(line, EVALUATOR_FONT_SCALE, color)
-        _blit_midleft(surface, badge_text, (20, hud_y_start + 54 + index * 18))
+        badges.append(bitmap_font.render_text(line, EVALUATOR_FONT_SCALE, color))
+    badge_x = 20
+    badge_y = surface.get_height() - max(
+        (badge.shape[1] for badge in badges),
+        default=0,
+    )
+    for badge in badges:
+        _blit_midleft(surface, badge, (badge_x, badge_y + badge.shape[1] // 2))
+        badge_x += badge.shape[0] + 20

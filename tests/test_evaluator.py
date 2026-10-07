@@ -118,11 +118,11 @@ class EvaluatorHudTests(unittest.TestCase):
         self.assertEqual(EvaluatorMode(enabled=True).hud_lines, ("EVALUATOR",))
 
     def test_freeze_is_shown_until_unfrozen(self) -> None:
-        """Freeze adds a second line that disappears on unfreeze."""
+        """Freeze joins the evaluator badge and disappears on unfreeze."""
         evaluator = EvaluatorMode(enabled=True)
 
         evaluator.toggle_freeze(1000)
-        self.assertEqual(evaluator.hud_lines, ("EVALUATOR", "FREEZE"))
+        self.assertEqual(evaluator.hud_lines, ("EVALUATOR FREEZE",))
 
         evaluator.toggle_freeze(2000)
         self.assertEqual(evaluator.hud_lines, ("EVALUATOR",))

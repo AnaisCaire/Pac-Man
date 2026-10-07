@@ -38,9 +38,7 @@ class EvaluatorMode:
         """Return the HUD badge lines: none in a normal game."""
         if not self.enabled:
             return ()
-        lines = ["EVALUATOR"]
-        if self.frozen:
-            lines.append("FREEZE")
+        lines = ["EVALUATOR FREEZE" if self.frozen else "EVALUATOR"]
         if self.selected_ghost is not None:
             lines.append(f"SELECTED {GHOST_NAMES[self.selected_ghost]}")
         return tuple(lines)

@@ -42,11 +42,23 @@ class HudEvaluatorBadgeTests(unittest.TestCase):
 
     def test_badge_freeze_and_selection_are_drawn(self) -> None:
         """Each evaluator line is rendered on the HUD."""
-        texts = self.drawn_texts(("EVALUATOR", "FREEZE", "SELECTED BLINKY"))
+        texts = self.drawn_texts(("EVALUATOR FREEZE", "SELECTED BLINKY"))
 
-        self.assertIn("EVALUATOR", texts)
-        self.assertIn("FREEZE", texts)
+        self.assertIn("EVALUATOR FREEZE", texts)
         self.assertIn("SELECTED BLINKY", texts)
+
+    def test_evaluator_text_is_anchored_below_the_level_row(self) -> None:
+        """Evaluator lines use the free bottom-left area of the HUD."""
+        with patch("src.ui.gameplay.hud._blit_midleft") as blit_midleft:
+            self.drawn_texts(("EVALUATOR FREEZE", "SELECTED BLINKY"))
+
+        badge_centers = [
+            call.args[2][1]
+            for call in blit_midleft.call_args_list
+            if call.args[2][1] > 870
+        ]
+        self.assertEqual(len(badge_centers), 2)
+        self.assertTrue(all(y > 870 for y in badge_centers))
 
 
 if __name__ == "__main__":
