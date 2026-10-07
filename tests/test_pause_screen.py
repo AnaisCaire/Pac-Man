@@ -44,6 +44,23 @@ class PauseScreenTests(unittest.TestCase):
         ):
             self.assertEqual(screen.handle_event(event), "menu")
 
+    def test_exit_confirmation_explains_score_loss(self) -> None:
+        """The confirmation states why the player must choose again."""
+        screen = self.make_screen()
+        screen.confirming_exit = True
+        surface = pygame.Surface((800, 900))
+
+        with patch(
+            "src.ui.screens.sub_screens.bitmap_font.render_text",
+            wraps=bitmap_font.render_text,
+        ) as render_text:
+            screen.draw(surface)
+
+        self.assertIn(
+            "You are going to loose your score",
+            [call.args[0] for call in render_text.call_args_list],
+        )
+
 
 class InstructionsScreenTests(unittest.TestCase):
     """Evaluator controls are documented in-game, not hidden."""

@@ -17,6 +17,7 @@ EVALUATOR_HELP = (
 )
 _HELP_FONT_SCALE = 2
 _HELP_LINE_HEIGHT = 22
+EXIT_WARNING = "You are going to loose your score"
 
 
 def _handle_button_click(event: pygame.event.Event,
@@ -151,5 +152,11 @@ class PauseScreen():
     def draw(self, surface: pygame.Surface) -> None:
         surface.fill(BG_COLOR)
         raster.blit_to_surface(surface, self.logo, self.logo_rect.topleft)
+        if self.confirming_exit:
+            warning = bitmap_font.render_text(EXIT_WARNING, 3, (255, 255, 0))
+            raster.blit_to_surface(surface, warning, (
+                self.cx - warning.shape[0] // 2,
+                self.cy - 100,
+            ))
         for button in self.buttons:
             button.draw(surface)
