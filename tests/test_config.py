@@ -35,7 +35,8 @@ class ConfigParsingTests(unittest.TestCase):
               "points_per_super_pacgum": 55,
               "points_per_ghost": 250,
               "seed": 99,
-              "level_max_time": 120
+              "level_max_time": 120,
+              "evaluator_mode": true
             }
             """
         )
@@ -50,6 +51,7 @@ class ConfigParsingTests(unittest.TestCase):
         self.assertEqual(config.points_per_ghost, 250)
         self.assertEqual(config.seed, 99)
         self.assertEqual(config.level_max_time, 120)
+        self.assertTrue(config.evaluator_mode)
 
     def test_unknown_keys_do_not_discard_valid_known_values(self) -> None:
         """Unknown top-level and level keys are ignored independently."""
@@ -81,7 +83,10 @@ class ConfigParsingTests(unittest.TestCase):
         ))
 
     def test_delivered_config_has_ten_generator_safe_levels(self) -> None:
-        config = parse_config("config.json")
+        with self.assertNoLogs("src.game_logic.config", level="WARNING"):
+            config = parse_config("config.json")
+
+        self.assertFalse(config.evaluator_mode)
 
         self.assertEqual(len(config.level), 10)
         self.assertTrue(all(
@@ -107,6 +112,7 @@ class ConfigParsingTests(unittest.TestCase):
                         "not an object",
                         {"width": 21, "height": 22},
                     ],
+                    "evaluator_mode": "true",
                 })
             )
 
@@ -122,13 +128,14 @@ class ConfigParsingTests(unittest.TestCase):
         self.assertEqual(config.points_per_ghost, defaults.points_per_ghost)
         self.assertEqual(config.seed, defaults.seed)
         self.assertEqual(config.level_max_time, defaults.level_max_time)
+        self.assertFalse(config.evaluator_mode)
         self.assertEqual([(level.width, level.height) for level in config.level[:3]], [
             (15, 15),
             (15, 15),
             (18, 18),
         ])
         self.assertEqual(len(config.level), 10)
-        self.assertGreaterEqual(len(logs.output), 8)
+        self.assertGreaterEqual(len(logs.output), 9)
 
     def test_malformed_json_root_and_missing_file_use_defaults(self) -> None:
         """Unreadable or structurally invalid config files recover cleanly."""

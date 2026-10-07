@@ -20,6 +20,7 @@ from ..scores.scores_utils import (
 from ..ui.screens.main_menu import MainMenu
 from ..ui.screens.gameover import GameOver
 from ..ui.screens.victory import VictoryScreen
+from ..ui.screens.score_entry import MENU_ACTION
 from ..ui.screens.sub_screens import (
     HighscoreScreen,
     InstructionsScreen,
@@ -37,6 +38,8 @@ from ..ui.music_manager import MusicManager
 from .entities.player import Player, handle_input, resolve_collisions
 from .entities.ghost_types import Blinky, Pinky, Inky, Clyde
 from .entities.ghosts import Ghost, MIN_RESPAWN_DISTANCE
+from .entities.items import Pacgum, SuperPacgum
+from .evaluator import EvaluatorMode
 
 
 WINDOW_SIZE = 800
@@ -163,6 +166,43 @@ def terminal_state(
     return None
 
 
+def handle_evaluator_input(
+    evaluator: EvaluatorMode,
+    events: list[pygame.event.Event],
+    now: int,
+    pacgums: dict[tuple[int, int], Pacgum],
+    super_pacgums: dict[tuple[int, int], SuperPacgum],
+    ghosts: list[Ghost],
+    maze: Maze,
+) -> None:
+    """Map evaluator key presses to application-level commands.
+
+    `now` must be project-clock time, not evaluator game time: while frozen,
+    game time stands still, so the freeze would measure as 0 ms long.
+    """
+    manual_directions = {
+        pygame.K_i: (0, -1),
+        pygame.K_k: (0, 1),
+        pygame.K_j: (-1, 0),
+        pygame.K_l: (1, 0),
+    }
+    for event in events:
+        if event.type != pygame.KEYDOWN:
+            continue
+        if event.key == pygame.K_f:
+            evaluator.toggle_freeze(now)
+        elif event.key == pygame.K_g:
+            evaluator.select_next_ghost(len(ghosts))
+        elif event.key == pygame.K_c:
+            evaluator.clear_level(pacgums, super_pacgums)
+        elif event.key in manual_directions:
+            evaluator.move_selected_ghost(
+                ghosts,
+                maze,
+                manual_directions[event.key],
+            )
+
+
 def _run_gameplay(screen: pygame.Surface, clock: ProjectClock,
                   config: Config,
                   pause_menu: PauseScreen,
@@ -200,6 +240,7 @@ def _run_gameplay(screen: pygame.Surface, clock: ProjectClock,
 
     simulation_start = clock.get_ticks_ms()
     level_timer = LevelTimer(simulation_start)
+    evaluator_mode = EvaluatorMode(enabled=config.evaluator_mode)
 
     ghost_positions = maze.place_ghosts(spawn)
     ghost_classes = [Blinky, Pinky, Inky, Clyde]
@@ -214,9 +255,15 @@ def _run_gameplay(screen: pygame.Surface, clock: ProjectClock,
     death_transition_handled = False
 
     while True:
-        current_time = clock.get_ticks_ms()
         events = pygame.event.get()
         handle_input(player, events)
+        handle_evaluator_input(evaluator_mode,
+                               events,
+                               clock.get_ticks_ms(),
+                               pacgums,
+                               super_pacgums,
+                               ghost_list,
+                               maze)
         for event in events:
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -255,7 +302,9 @@ def _run_gameplay(screen: pygame.Surface, clock: ProjectClock,
                     clock.tick(60)
                 clock.resume()
 
-        current_time = clock.get_ticks_ms()
+        # Every rule below reads evaluator game time, so one freeze stops the
+        # level timer, power-up, respawn and ghost timers together.
+        current_time = evaluator_mode.game_time(clock.get_ticks_ms())
         if player.is_dying or (not player.is_alive and player.lives > 0):
             level_timer.pause(current_time)
         else:
@@ -293,7 +342,9 @@ def _run_gameplay(screen: pygame.Surface, clock: ProjectClock,
         if outcome is not None:
             return (outcome, player.score, player.lives)
 
-        if player.is_alive and not player.is_dying:
+        # Pac-Man keeps moving during a freeze (frame-based); ghosts do not.
+        ghosts_move = player.is_alive and not player.is_dying
+        if ghosts_move and not evaluator_mode.frozen:
             for ghost in ghost_list:
                 ghost.update(current_time, maze)
 
@@ -310,7 +361,8 @@ def _run_gameplay(screen: pygame.Surface, clock: ProjectClock,
             lives=player.lives,
             level_num=level_index + 1,
             is_powered_up=player.is_powered_up,
-            hud_y_start=WINDOW_SIZE
+            hud_y_start=WINDOW_SIZE,
+            evaluator_lines=evaluator_mode.hud_lines,
         )
         pygame.display.flip()
         clock.tick(60)
@@ -415,7 +467,10 @@ def game_loop(config: Config) -> None:
                     # Original review note: Maybe winning track?
                     # Post-fix: deferred; no new track assets in #4.
                     music.play("menu")
-                    victory_menu.set_score(session.score)
+                    victory_menu.set_score(
+                        session.score,
+                        evaluator_run=config.evaluator_mode,
+                    )
                 # Original review note: This is going to the next level not
                 # state = GameState.IN_GAME, should load next level instead
                 # Post-fix: kept state transition; next loop loads next level
@@ -428,7 +483,10 @@ def game_loop(config: Config) -> None:
             # keeps existing menu music behavior.
             elif next_state == GameState.GAME_OVER:
                 music.play("menu")
-                gameover_menu.set_score(session.score)
+                gameover_menu.set_score(
+                    session.score,
+                    evaluator_run=config.evaluator_mode,
+                )
                 state = GameState.GAME_OVER
 
             elif next_state == GameState.MAIN_MENU:
@@ -443,7 +501,10 @@ def game_loop(config: Config) -> None:
         elif state == GameState.GAME_OVER:
             for event in events:
                 gameover_action = gameover_menu.handle_event(event)
-                if gameover_action == "submit":
+                # Evaluator runs leave here without ever reaching record_score.
+                if gameover_action == MENU_ACTION:
+                    state = GameState.MAIN_MENU
+                elif gameover_action == "submit":
                     saved_scores = record_score(
                         highscore_path,
                         gameover_menu.score_entry(),
@@ -463,7 +524,10 @@ def game_loop(config: Config) -> None:
         elif state == GameState.VICTORY:
             for event in events:
                 victory_action = victory_menu.handle_event(event)
-                if victory_action == "submit":
+                # Evaluator runs leave here without ever reaching record_score.
+                if victory_action == MENU_ACTION:
+                    state = GameState.MAIN_MENU
+                elif victory_action == "submit":
                     saved_scores = record_score(
                         highscore_path,
                         victory_menu.score_entry(),

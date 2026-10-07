@@ -66,5 +66,74 @@ class ScoreEntryScreenTests(unittest.TestCase):
         self.assertTrue(bitmap_font.render_text("I", 4, (255, 255, 255))[:, :, 3].any())
 
 
+class EvaluatorRunScoreEntryTests(unittest.TestCase):
+    """Evaluator runs are never offered to the highscore board."""
+
+    def make_screen(self) -> ScoreEntryScreen:
+        with patch(
+            "src.ui.screens.score_entry.raster.load_rgba",
+            return_value=np.zeros((1, 1, 4), dtype=np.uint8),
+        ):
+            screen = ScoreEntryScreen(800, 900, "game_over.png")
+        screen.set_score(123, evaluator_run=True)
+        return screen
+
+    def test_enter_returns_to_menu_without_a_name(self) -> None:
+        """Enter leaves the screen with no name and no validation error."""
+        screen = self.make_screen()
+
+        action = screen.handle_event(pygame.event.Event(
+            pygame.KEYDOWN, key=pygame.K_RETURN, unicode=""
+        ))
+
+        self.assertEqual(action, "menu")
+        self.assertIsNone(screen.error)
+
+    def test_typing_is_ignored_and_never_submits(self) -> None:
+        """No name is collected, so no ScoreEntry can be submitted."""
+        screen = self.make_screen()
+        actions = [
+            screen.handle_event(pygame.event.Event(
+                pygame.KEYDOWN, key=pygame.K_a, unicode=character
+            ))
+            for character in "Ana"
+        ]
+        actions.append(screen.handle_event(pygame.event.Event(
+            pygame.KEYDOWN, key=pygame.K_RETURN, unicode=""
+        )))
+
+        self.assertEqual(screen.name, "")
+        self.assertNotIn("submit", actions)
+
+    def test_draw_says_the_score_is_not_saved(self) -> None:
+        """The reviewer sees why no name is requested."""
+        screen = self.make_screen()
+        surface = pygame.Surface((800, 900))
+
+        with patch("src.ui.screens.score_entry._draw_center") as draw_center:
+            screen.draw(surface)
+
+        drawn = [call.args[1] for call in draw_center.call_args_list]
+        self.assertIn("EVALUATOR RUN", drawn)
+        self.assertIn("SCORE NOT SAVED", drawn)
+        self.assertIn("PRESS ENTER FOR MENU", drawn)
+        self.assertNotIn("INSERT NAME", drawn)
+
+    def test_normal_set_score_restores_name_entry(self) -> None:
+        """A later normal game asks for a name and submits again."""
+        screen = self.make_screen()
+        screen.set_score(456)
+        screen.handle_event(pygame.event.Event(
+            pygame.KEYDOWN, key=pygame.K_a, unicode="A"
+        ))
+
+        action = screen.handle_event(pygame.event.Event(
+            pygame.KEYDOWN, key=pygame.K_RETURN, unicode=""
+        ))
+
+        self.assertEqual(action, "submit")
+        self.assertEqual(screen.score_entry().score, 456)
+
+
 if __name__ == "__main__":
     unittest.main()

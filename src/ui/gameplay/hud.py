@@ -3,6 +3,8 @@ import pygame
 from ..gfx import bitmap_font, raster
 
 FONT_SCALE = 4
+EVALUATOR_FONT_SCALE = 2
+EVALUATOR_COLORS = ((255, 140, 0), (0, 255, 255))
 
 
 def _blit_midleft(surface: pygame.Surface, rgba: np.ndarray,
@@ -28,8 +30,9 @@ def _blit_midright(surface: pygame.Surface, rgba: np.ndarray,
 
 def draw_legend(surface: pygame.Surface,
                 time_left: int, score: int, lives: int,
-                level_num: int, is_powered_up: bool, hud_y_start: int) -> None:
-    """Draws the game's HUD including timer, score, and lives."""
+                level_num: int, is_powered_up: bool, hud_y_start: int,
+                evaluator_lines: tuple[str, ...] = ()) -> None:
+    """Draws the game's HUD including timer, score, lives and evaluator badge."""
     TEXT_COLOR = (255, 255, 255)
     POWER_COLOR = (255, 255, 0)
     URGENT_COLOR = (255, 0, 0)
@@ -60,3 +63,16 @@ def draw_legend(surface: pygame.Surface,
         power_text = bitmap_font.render_text(
             "POWER PELLET ACTIVE!", FONT_SCALE, POWER_COLOR)
         _blit_center(surface, power_text, (screen_width // 2, bottom_row_y))
+
+    badges = []
+    for index, line in enumerate(evaluator_lines):
+        color = EVALUATOR_COLORS[min(index, len(EVALUATOR_COLORS) - 1)]
+        badges.append(bitmap_font.render_text(line, EVALUATOR_FONT_SCALE, color))
+    badge_x = 30
+    badge_y = surface.get_height() - max(
+        (badge.shape[1] for badge in badges),
+        default=0,
+    )
+    for badge in badges:
+        _blit_midleft(surface, badge, (badge_x, badge_y + badge.shape[1] // 2))
+        badge_x += badge.shape[0] + 20

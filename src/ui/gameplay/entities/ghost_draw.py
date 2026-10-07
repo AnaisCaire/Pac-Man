@@ -8,6 +8,7 @@ from ...gfx import raster
 
 # entities/ → gameplay/ → ui/ → images/
 _IMAGES_DIR = pathlib.Path(__file__).parent.parent.parent / "images"
+GHOST_INSET = 2
 
 # keyed by sprite name → raw RGBA array (populated on first draw call)
 _GHOST_IMAGES: dict[str, np.ndarray] = {}
@@ -20,28 +21,20 @@ def _load_ghost_images() -> None:
     """Load all ghost images from disk once, on first use."""
     if _GHOST_IMAGES:
         return
-    # directional variants for Blinky (red)
-    _GHOST_IMAGES['red_right'] = raster.load_rgba(
-        str(_IMAGES_DIR / "ghost_red" / "red_ghost.png"))
-    _GHOST_IMAGES['red_left'] = raster.load_rgba(
-        str(_IMAGES_DIR / "ghost_red" / "red_ghost_left.png"))
-    # single image per other ghost type
-    _GHOST_IMAGES['pink'] = raster.load_rgba(str(_IMAGES_DIR / "pink_ghost.png"))
-    _GHOST_IMAGES['cyan'] = raster.load_rgba(str(_IMAGES_DIR / "cyan_ghost.png"))
-    _GHOST_IMAGES['yellow'] = raster.load_rgba(str(_IMAGES_DIR / "yellow_ghost.png"))
-    # shared scared image for all ghosts when frightened
-    _GHOST_IMAGES['scared'] = raster.load_rgba(str(_IMAGES_DIR / "scared.png"))
+    for sprite in ("red", "pink", "cyan", "yellow", "scared"):
+        for direction in ("left", "right"):
+            key = f"{sprite}_{direction}"
+            _GHOST_IMAGES[key] = raster.load_rgba(
+                str(_IMAGES_DIR / f"{sprite}_ghost_{direction}.png")
+            )
 
 
 def _pick_image_key(ghost: Ghost) -> str:
     """Return the correct raw sprite key for this ghost's current state."""
-    if ghost.is_frightened:
-        return 'scared'
-    if ghost.sprite == 'red':
-        # Blinky has a left/right variant
-        return 'red_right' if ghost.current_direction == (1, 0) else 'red_left'
-    # all other sprites are single images
-    return ghost.sprite if ghost.sprite in _GHOST_IMAGES else 'red_right'
+    sprite = "scared" if ghost.is_frightened else ghost.sprite
+    direction = "right" if ghost.current_direction == (1, 0) else "left"
+    key = f"{sprite}_{direction}"
+    return key if key in _GHOST_IMAGES else "red_right"
 
 
 def _scaled_image(key: str, tile_size: int) -> np.ndarray:
@@ -62,10 +55,10 @@ def draw_ghosts(surface: pygame.Surface, ghosts: list[Ghost], tile_size: int,
         if ghost.is_dead:
             continue  # invisible while returning home
 
-        image = _scaled_image(_pick_image_key(ghost), tile_size)
+        image = _scaled_image(_pick_image_key(ghost), tile_size - 2 * GHOST_INSET)
 
         px = offset_x + (ghost.grid_x + ghost.progress *
-                         ghost.current_direction[0]) * tile_size
+                         ghost.current_direction[0]) * tile_size + GHOST_INSET
         py = offset_y + (ghost.grid_y + ghost.progress *
-                         ghost.current_direction[1]) * tile_size
+                         ghost.current_direction[1]) * tile_size + GHOST_INSET
         raster.blit_to_surface(surface, image, (int(px), int(py)))
