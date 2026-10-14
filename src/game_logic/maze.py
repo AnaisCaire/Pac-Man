@@ -1,4 +1,5 @@
 import random
+from collections import deque
 from collections.abc import Callable
 
 from mazegenerator.mazegenerator import MazeGenerator
@@ -186,3 +187,63 @@ class Maze:
         if len(ghosts) != 4:
             raise MazeGenerationError("expected four ghost positions")
         return ghosts
+
+    def first_step_towards(
+        self,
+        start: tuple[int, int],
+        goal: tuple[int, int],
+    ) -> tuple[int, int]:
+        """Return the first direction of a shortest path, or (0, 0).
+
+        Breadth-first search: a FIFO queue explores cells in rings of equal
+        distance, so the first time `goal` is reached it is by a shortest path.
+        Returns (0, 0) when already at `goal` or when `goal` is unreachable.
+        """
+        if start == goal:
+            return (0, 0)
+
+        # parent[cell] = the cell we came from. It doubles as the "visited"
+        # set: a cell is in the dict as soon as we have found a way to it.
+        parent: dict[tuple[int, int], tuple[int, int] | None] = {start: None}
+        # FIFO queue: popleft() takes the oldest cell, which is what makes
+        # the search go ring by ring (BFS) instead of diving deep (DFS).
+        queue: deque[tuple[int, int]] = deque([start])
+
+        while queue:
+            x, y = queue.popleft()
+            # Stop as soon as the goal is taken out: its parent chain is
+            # already a shortest path.
+            if (x, y) == goal:
+                break
+            for direction, (dx, dy) in _DIRECTIONS.items():
+                neighbour = (x + dx, y + dy)
+                # Skip cells we already reached: the first way in is shortest.
+                if neighbour in parent:
+                    continue
+                # Same wall rules as _reachable_from: no wall on our side,
+                # no solid block, and no wall on the neighbour's facing side.
+                # Off-map cells count as walls, so they are never added.
+                if self.has_wall(x, y, direction):
+                    continue
+                if self.is_wall(*neighbour) or self.has_wall(
+                    *neighbour, _OPPOSITE[direction]
+                ):
+                    continue
+                parent[neighbour] = (x, y)
+                queue.append(neighbour)
+
+        # The queue emptied without ever reaching the goal: no path exists.
+        if goal not in parent:
+            return (0, 0)
+
+        # Walk back from the goal until the next parent is `start`; the cell
+        # we stop on is the first step of the path.
+        step = goal
+        while parent[step] != start:
+            previous = parent[step]
+            # Only `start` has a None parent, and the loop stops before it.
+            assert previous is not None
+            step = previous
+
+        # Convert the first cell into a direction, e.g. (0, 1) means south.
+        return (step[0] - start[0], step[1] - start[1])

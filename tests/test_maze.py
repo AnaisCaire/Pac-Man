@@ -156,5 +156,62 @@ class MazeAdapterTests(unittest.TestCase):
         self.assertIs(inky.rng, rng)
 
 
+# Wall bits per cell: N=1, E=2, S=4, W=8; 15 is a solid block.
+#
+#   (0,0) (1,0)  ###        (0,0)-(1,0) is a dead end: wall on (1,0)'s east.
+#   (0,1)  ###  (2,1)       Start (0,1), goal (2,1): the solid centre forces
+#   (0,2) (1,2) (2,2)       the only route down and around the bottom row.
+TRAP_GRID = [
+    [9, 7, 15],
+    [10, 15, 11],
+    [12, 5, 6],
+]
+
+# A 3x1 corridor: closed north and south, open between neighbours.
+CORRIDOR_GRID = [[13, 5, 7]]
+
+
+def fixture_maze(grid: list[list[int]]) -> Maze:
+    """Build a Maze from a hand-written grid instead of the generator."""
+    size = LevelMazeSize(len(grid[0]), len(grid))
+    return Maze(size, 0, grid_factory=lambda _size, _seed: grid)
+
+
+class ShortestPathTests(unittest.TestCase):
+    """BFS returns the first move of a shortest wall-respecting path."""
+
+    def test_corridor_steps_toward_goal_both_ways(self) -> None:
+        """In a straight corridor the first step points at the goal."""
+        maze = fixture_maze(CORRIDOR_GRID)
+
+        self.assertEqual(maze.first_step_towards((0, 0), (2, 0)), (1, 0))
+        self.assertEqual(maze.first_step_towards((2, 0), (0, 0)), (-1, 0))
+
+    def test_trap_goes_around_instead_of_into_dead_end(self) -> None:
+        """Greedy distance ties and picks north into a dead end; BFS goes south."""
+        maze = fixture_maze(TRAP_GRID)
+
+        self.assertEqual(maze.first_step_towards((0, 1), (2, 1)), (0, 1))
+
+    def test_first_step_never_crosses_a_wall(self) -> None:
+        """From the dead end, the only legal way out is back west."""
+        maze = fixture_maze(TRAP_GRID)
+
+        self.assertEqual(maze.first_step_towards((1, 0), (2, 1)), (-1, 0))
+
+    def test_already_at_goal_returns_no_move(self) -> None:
+        """Start equal to goal needs no step."""
+        maze = fixture_maze(TRAP_GRID)
+
+        self.assertEqual(maze.first_step_towards((2, 1), (2, 1)), (0, 0))
+
+    def test_unreachable_goal_returns_no_move(self) -> None:
+        """A solid or walled-off goal yields (0, 0) instead of crashing."""
+        maze = fixture_maze(TRAP_GRID)
+
+        self.assertEqual(maze.first_step_towards((0, 1), (2, 0)), (0, 0))
+        self.assertEqual(maze.first_step_towards((0, 1), (9, 9)), (0, 0))
+
+
 if __name__ == "__main__":
     unittest.main()
