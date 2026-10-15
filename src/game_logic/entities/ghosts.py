@@ -10,6 +10,8 @@ if TYPE_CHECKING:
 
 GHOST_SPEED = 1.5
 MIN_RESPAWN_DISTANCE = 5
+SCATTER_DURATION_MS = 7000
+CHASE_DURATION_MS = 20_000
 
 
 class GhostState(Enum):
@@ -60,17 +62,12 @@ class Ghost(Entity):
         """
         return (self.player.grid_x, self.player.grid_y)
 
-    def _can_move(self, maze: Maze, direction: Tuple[int, int]) -> bool:
-        """
-        Ghost cannot go backwards except when frightened.
-        """
-        # Prevent 180-degree turns unless frightened
-        if self.current_direction != (0, 0) and self.state != GhostState.FRIGHTENED:
-            opposite_direction = (-self.current_direction[0], -
-                                  self.current_direction[1])
-            if direction == opposite_direction:
-                return False
-
+    def _is_walkable_direction(
+        self,
+        maze: Maze,
+        direction: Tuple[int, int],
+    ) -> bool:
+        """Return whether `direction` enters a valid connected maze tile."""
         # guard: current position must be inside the grid
         if not (0 <= self.grid_x < maze.width and 0 <= self.grid_y < maze.height):
             return False
@@ -85,22 +82,55 @@ class Ghost(Entity):
 
         return super()._can_move(maze, direction)
 
+    def _can_move(self, maze: Maze, direction: Tuple[int, int]) -> bool:
+        """Reject immediate reversal except while frightened."""
+        if self.current_direction != (0, 0) and self.state != GhostState.FRIGHTENED:
+            opposite_direction = (-self.current_direction[0], -
+                                  self.current_direction[1])
+            if direction == opposite_direction:
+                return False
+        return self._is_walkable_direction(maze, direction)
+
     def _choose_direction(self, maze: Maze) -> tuple[int, int]:
         """ Choose next direction based on current state and target tile. """
+        if self.state == GhostState.DEAD:
+            return maze.first_step_towards(
+                (self.grid_x, self.grid_y),
+                (self.home_x, self.home_y),
+            )
+
         possible_directions = [(0, -1), (-1, 0), (0, 1), (1, 0)]
-        valid_directions = []
+        valid_directions = [
+            direction
+            for direction in possible_directions
+            if self._can_move(maze, direction)
+        ]
 
-        for d in possible_directions:
-            if self._can_move(maze, d):
-                valid_directions.append(d)
-
-        # Fallback if totally stuck (shouldn't happen in a valid maze)
+        # A normal ghost may reverse only when a dead end leaves no other exit.
         if not valid_directions:
+            reverse = (-self.current_direction[0], -self.current_direction[1])
+            if self._is_walkable_direction(maze, reverse):
+                return reverse
             return (0, 0)
 
-        # Frightened: move randomly ?
         if self.state == GhostState.FRIGHTENED:
-            return self.rng.choice(valid_directions)
+            distances = {
+                direction: (
+                    self.grid_x + direction[0] - self.player.grid_x
+                ) ** 2 + (
+                    self.grid_y + direction[1] - self.player.grid_y
+                ) ** 2
+                for direction in valid_directions
+            }
+            max_distance = max(distances.values())
+            farthest_directions = [
+                direction
+                for direction in valid_directions
+                if distances[direction] == max_distance
+            ]
+            if len(farthest_directions) == 1:
+                return farthest_directions[0]
+            return self.rng.choice(farthest_directions)
 
         # Determine target tile based on state
         target_x, target_y = self.grid_x, self.grid_y
@@ -108,7 +138,7 @@ class Ghost(Entity):
         if self.state == GhostState.CHASE:
             target_x, target_y = self._get_chase_target()
 
-        elif self.state in (GhostState.SCATTER, GhostState.DEAD):
+        elif self.state == GhostState.SCATTER:
             target_x, target_y = self.home_x, self.home_y
 
         # Greedy: pick the direction that minimises distance to target
@@ -139,7 +169,7 @@ class Ghost(Entity):
         """ Handles the automatic switching between SCATTER, CHASE, and FRIGHTENED. """
 
         if self.state == GhostState.FRIGHTENED:
-            if current_time - self.state_timer > self.player.power_up_duration:
+            if current_time - self.state_timer >= self.player.power_up_duration:
                 self.state = GhostState.CHASE
                 self.state_timer = current_time
             return
@@ -153,13 +183,13 @@ class Ghost(Entity):
         time_in_state = current_time - self.state_timer
 
         if self.state == GhostState.SCATTER:
-            if time_in_state > 7000:  # should we hardcode it ?
+            if time_in_state >= SCATTER_DURATION_MS:
                 self.state = GhostState.CHASE
                 self.state_timer = current_time
                 self._reverse_direction()
 
         elif self.state == GhostState.CHASE:
-            if time_in_state > 20000:
+            if time_in_state >= CHASE_DURATION_MS:
                 self.state = GhostState.SCATTER
                 self.state_timer = current_time
                 self._reverse_direction()
@@ -205,7 +235,6 @@ class Ghost(Entity):
         Triggered when Pac-Man eats the ghost while FRIGHTENED.
         """
         self.state = GhostState.DEAD
-        self.current_direction = (0, 0)
 
     def frighten(self, current_time: int, reverse: bool = True) -> None:
         """Make a live ghost frightened, optionally reversing its direction."""

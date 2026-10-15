@@ -174,13 +174,14 @@ def resolve_collisions(
     """Resolve items before ghosts, so a same-tile super-pacgum wins."""
     if player.is_dying or not player.is_alive:
         return
-    was_powered_up = player.is_powered_up
+    super_pacgum_count = len(super_pacgums)
     player.check_item_collision(pacgums, super_pacgums, current_time)
-    if player.is_powered_up and not was_powered_up:
+    power_up_activated = len(super_pacgums) < super_pacgum_count
+    if power_up_activated:
         for ghost in ghosts:
             ghost.frighten(current_time, reverse=False)
     player.check_ghost_collision(ghosts)
-    if player.is_powered_up and not was_powered_up:
+    if power_up_activated:
         for ghost in ghosts:
             ghost.frighten(current_time)
 

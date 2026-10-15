@@ -27,10 +27,13 @@ def _load_ghost_images() -> None:
             _GHOST_IMAGES[key] = raster.load_rgba(
                 str(_IMAGES_DIR / f"{sprite}_ghost_{direction}.png")
             )
+    _GHOST_IMAGES["dead"] = raster.load_rgba(str(_IMAGES_DIR / "eyes_death.png"))
 
 
 def _pick_image_key(ghost: Ghost) -> str:
     """Return the correct raw sprite key for this ghost's current state."""
+    if ghost.is_dead:
+        return "dead"
     sprite = "scared" if ghost.is_frightened else ghost.sprite
     direction = "right" if ghost.current_direction == (1, 0) else "left"
     key = f"{sprite}_{direction}"
@@ -52,9 +55,6 @@ def draw_ghosts(surface: pygame.Surface, ghosts: list[Ghost], tile_size: int,
     _load_ghost_images()
 
     for ghost in ghosts:
-        if ghost.is_dead:
-            continue  # invisible while returning home
-
         image = _scaled_image(_pick_image_key(ghost), tile_size - 2 * GHOST_INSET)
 
         px = offset_x + (ghost.grid_x + ghost.progress *

@@ -51,6 +51,24 @@ class GameplayRuleTests(unittest.TestCase):
         self.assertFalse(player.is_dying)
         self.assertEqual(ghost.state, GhostState.DEAD)
 
+    def test_second_super_pacgum_refreshes_surviving_ghost_timers(self) -> None:
+        """A refreshed power window keeps player and ghosts synchronized."""
+        config = Config(points_per_super_pacgum=22)
+        player = Player(1, 1, 16, config)
+        ghost = Ghost(2, 1, 16, player, 0, random.Random(1))
+        player.activate_power_up(0)
+        ghost.frighten(0, reverse=False)
+        super_pacgums = {(1, 1): SuperPacgum(1, 1, 22)}
+
+        resolve_collisions(player, {}, super_pacgums, [ghost], 4000)
+        player.update_timers(8000)
+        ghost._manage_state_timers(8000)
+
+        self.assertEqual(player.power_up_start_time, 4000)
+        self.assertEqual(ghost.state_timer, 4000)
+        self.assertTrue(player.is_powered_up)
+        self.assertIs(ghost.state, GhostState.FRIGHTENED)
+
     def test_each_frightened_ghost_scores_once(self) -> None:
         """A DEAD ghost cannot score again during repeated collision frames."""
         player = Player(1, 1, 16, Config(points_per_ghost=33))
