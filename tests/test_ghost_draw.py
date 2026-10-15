@@ -29,11 +29,13 @@ class GhostSpriteTests(unittest.TestCase):
             ghost_draw._load_ghost_images()
 
         loaded_names = {Path(call.args[0]).name for call in load.call_args_list}
-        self.assertEqual(loaded_names, {
+        expected_names = {
             f"{sprite}_ghost_{direction}.png"
             for sprite in ("red", "pink", "cyan", "yellow", "scared")
             for direction in ("left", "right")
-        })
+        }
+        expected_names.add("eyes_death.png")
+        self.assertEqual(loaded_names, expected_names)
 
     def test_selects_direction_for_every_normal_and_frightened_sprite(self) -> None:
         ghost_draw._GHOST_IMAGES.update({
@@ -57,6 +59,30 @@ class GhostSpriteTests(unittest.TestCase):
         self.assertEqual(ghost_draw._pick_image_key(ghost), "scared_right")
         ghost.current_direction = (0, 1)
         self.assertEqual(ghost_draw._pick_image_key(ghost), "scared_left")
+
+        ghost.state = GhostState.DEAD
+        self.assertEqual(ghost_draw._pick_image_key(ghost), "dead")
+
+    def test_dead_ghost_eyes_are_drawn(self) -> None:
+        player = Player(1, 1, 16, Config())
+        ghost = Ghost(2, 3, 16, player, 0)
+        ghost.state = GhostState.DEAD
+        surface = pygame.Surface((100, 100))
+        image = np.zeros((12, 12, 4), dtype=np.uint8)
+        ghost_draw._GHOST_IMAGES["dead"] = image
+
+        with (
+            patch.object(ghost_draw, "_load_ghost_images"),
+            patch.object(ghost_draw, "_scaled_image", return_value=image),
+            patch.object(ghost_draw.raster, "blit_to_surface") as blit,
+        ):
+            ghost_draw.draw_ghosts(surface, [ghost], 16, 5, 7)
+
+        blit.assert_called_once_with(
+            surface,
+            image,
+            (5 + 2 * 16 + 2, 7 + 3 * 16 + 2),
+        )
 
     def test_draw_insets_ghost_two_pixels_inside_its_tile(self) -> None:
         player = Player(1, 1, 16, Config())

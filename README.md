@@ -146,6 +146,23 @@ With evaluator mode disabled:
 - Completing a level keeps score and remaining lives. Completing the tenth
   configured level wins the game.
 
+## Ghost behavior
+
+- Blinky targets Pac-Man directly; Pinky targets four tiles ahead; Inky uses
+  the doubled vector from Blinky to two tiles ahead; Clyde chases when far and
+  targets home within eight tiles.
+- Chase and Scatter greedily approach their target without reversing at an
+  ordinary intersection. Reversal is explicit when Scatter/Chase changes,
+  Frightened starts, or a dead end leaves no other legal exit.
+- Frightened ghosts choose a legal next tile that maximizes squared distance
+  from Pac-Man; their injected RNG breaks only equal-distance ties.
+- Eaten ghosts remain visible as returning eyes and use a shortest
+  wall-respecting path to home. On arrival, the safe-corner respawn policy runs
+  immediately and the ghost resumes Scatter; there is no additional delay.
+- Scatter lasts 7 seconds, Chase lasts 20 seconds, and Frightened lasts for the
+  player's power-up window. Pause and Evaluator Freeze stop those simulation
+  timers without a jump when play resumes.
+
 The delivered `config.json` contains ten 15x15–18x18 levels. The 18x18 cap
 avoids a known hang in the assigned maze generator at larger sizes. Level 1
 uses the configured seed; later levels use isolated random seeds.
