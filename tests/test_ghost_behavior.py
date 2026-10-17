@@ -89,6 +89,40 @@ class GhostDirectionTests(unittest.TestCase):
 class GhostLifecycleTests(unittest.TestCase):
     """Eaten ghosts visibly return through the maze and respawn."""
 
+    def test_dead_eyes_move_twice_as_fast_as_a_live_ghost(self) -> None:
+        maze = fixture_maze([[0, 0, 0] for _ in range(3)])
+        player = Player(2, 1, 16, Config())
+        live = Ghost(1, 1, 16, player, 0)
+        dead = Ghost(1, 1, 16, player, 0)
+        live.state = GhostState.CHASE
+        dead.state = GhostState.DEAD
+        live.current_direction = (1, 0)
+        dead.current_direction = (1, 0)
+        dead.home_x, dead.home_y = (2, 1)
+
+        live.update(0, maze)
+        dead.update(0, maze)
+
+        self.assertEqual(dead.progress, live.progress * 2)
+
+    def test_dead_eyes_retarget_before_respawning_at_a_safe_corner(self) -> None:
+        player = Player(0, 0, 16, Config())
+        ghost = Ghost(0, 0, 16, player, 0)
+        ghost.home_positions = [(0, 0), (14, 0)]
+        ghost.state = GhostState.DEAD
+
+        ghost._manage_state_timers(100)
+
+        self.assertIs(ghost.state, GhostState.DEAD)
+        self.assertEqual((ghost.grid_x, ghost.grid_y), (0, 0))
+        self.assertEqual((ghost.home_x, ghost.home_y), (14, 0))
+
+        ghost.grid_x, ghost.grid_y = (14, 0)
+        ghost._manage_state_timers(200)
+
+        self.assertIs(ghost.state, GhostState.SCATTER)
+        self.assertEqual((ghost.grid_x, ghost.grid_y), (14, 0))
+
     def test_dead_ghost_follows_shortest_route_home_and_respawns(self) -> None:
         maze = fixture_maze(TRAP_GRID)
         player = Player(0, 0, 16, Config())

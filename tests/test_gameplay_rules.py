@@ -214,19 +214,6 @@ class GameplayRuleTests(unittest.TestCase):
         self.assertEqual(len(set(ghosts)), 4)
         self.assertEqual(set(ghosts), set(super_pacgums))
 
-    def test_respawn_uses_another_corner_when_home_is_too_close(self) -> None:
-        player = Player(0, 0, 16, Config())
-        ghost = Ghost(0, 0, 16, player, 0, random.Random(1))
-        ghost.home_positions = [(0, 0), (14, 0), (0, 14), (14, 14)]
-
-        ghost.respawn(100)
-
-        self.assertEqual((ghost.grid_x, ghost.grid_y), (14, 0))
-        self.assertGreaterEqual(
-            abs(ghost.grid_x - player.grid_x) + abs(ghost.grid_y - player.grid_y),
-            5,
-        )
-
     def test_arrow_and_wasd_keys_map_to_the_four_directions(self) -> None:
         player = Player(1, 1, 16, Config())
         expected = {

@@ -157,8 +157,9 @@ With evaluator mode disabled:
 - Frightened ghosts choose a legal next tile that maximizes squared distance
   from Pac-Man; their injected RNG breaks only equal-distance ties.
 - Eaten ghosts remain visible as returning eyes and use a shortest
-  wall-respecting path to home. On arrival, the safe-corner respawn policy runs
-  immediately and the ghost resumes Scatter; there is no additional delay.
+  wall-respecting path at twice normal speed. If their home is unsafe when they
+  arrive, the eyes continue visibly to a distant corner; the ghost respawns
+  exactly there and resumes Scatter, with no additional delay or teleport.
 - Scatter lasts 7 seconds, Chase lasts 20 seconds, and Frightened lasts for the
   player's power-up window. Pause and Evaluator Freeze stop those simulation
   timers without a jump when play resumes.
