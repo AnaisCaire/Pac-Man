@@ -52,11 +52,21 @@ class HighscoreScreen():
 
     def draw(self, surface: pygame.Surface) -> None:
         surface.fill(BG_COLOR)
+        title = bitmap_font.render_text("HALL OF FAME", 5, (255, 255, 0))
+        raster.blit_to_surface(surface, title, (
+            surface.get_width() // 2 - title.shape[0] // 2,
+            140,
+        ))
         for index, score in enumerate(self.scores):
             text = bitmap_font.render_text(
-                f"{index + 1}: {score.name} {score.score}", 3, (255, 255, 255)
+                f"{index + 1:>2}  {score.name:<10}  {score.score:>6}",
+                3,
+                (255, 255, 255),
             )
-            raster.blit_to_surface(surface, text, (80, 50 + index * 35))
+            raster.blit_to_surface(surface, text, (
+                surface.get_width() // 2 - text.shape[0] // 2,
+                240 + index * 40,
+            ))
         self.back_btn.draw(surface)
 
 

@@ -9,6 +9,7 @@ if TYPE_CHECKING:
     from ..maze import Maze
 
 GHOST_SPEED = 1.5
+DEAD_SPEED_MULTIPLIER = 2.0
 MIN_RESPAWN_DISTANCE = 5
 SCATTER_DURATION_MS = 7000
 CHASE_DURATION_MS = 20_000
@@ -177,7 +178,13 @@ class Ghost(Entity):
         # wait until home tile is reached
         if self.state == GhostState.DEAD:
             if self.grid_x == self.home_x and self.grid_y == self.home_y:
-                self.respawn(current_time)
+                safe_home = self._safe_respawn_home()
+                if safe_home == (self.home_x, self.home_y):
+                    self.respawn(current_time)
+                else:
+                    self.home_x, self.home_y = safe_home
+                    self.current_direction = (0, 0)
+                    self.progress = 0.0
             return
 
         time_in_state = current_time - self.state_timer
@@ -208,8 +215,13 @@ class Ghost(Entity):
         if self.current_direction == (0, 0):
             self.current_direction = self._choose_direction(maze)
 
-        # Advance sub-tile progress
-        self.progress += self.speed / self.tile_size
+        # Returning eyes travel faster; every live state keeps the base speed.
+        speed = (
+            self.speed * DEAD_SPEED_MULTIPLIER
+            if self.state == GhostState.DEAD
+            else self.speed
+        )
+        self.progress += speed / self.tile_size
         if self.progress >= 1.0:
             self.grid_x += self.current_direction[0]
             self.grid_y += self.current_direction[1]
@@ -250,14 +262,29 @@ class Ghost(Entity):
         Triggered when the ghost reaches the ghost house after being eaten.
         Resets position to home and state to standard SCATTER/CHASE.
         """
-        for home_x, home_y in self.home_positions:
-            if (abs(home_x - self.player.grid_x)
-                    + abs(home_y - self.player.grid_y) >= MIN_RESPAWN_DISTANCE):
-                self.home_x, self.home_y = home_x, home_y
-                break
         self.grid_x = self.home_x
         self.grid_y = self.home_y
         self.current_direction = (0, 0)
         self.progress = 0.0
         self.state = GhostState.SCATTER
         self.state_timer = current_time
+
+    def _safe_respawn_home(self) -> tuple[int, int]:
+        """Keep the current home when safe, otherwise choose a distant corner."""
+        current_home = (self.home_x, self.home_y)
+        if (
+            abs(self.home_x - self.player.grid_x)
+            + abs(self.home_y - self.player.grid_y)
+            >= MIN_RESPAWN_DISTANCE
+        ):
+            return current_home
+        return next(
+            (
+                (home_x, home_y)
+                for home_x, home_y in self.home_positions
+                if abs(home_x - self.player.grid_x)
+                + abs(home_y - self.player.grid_y)
+                >= MIN_RESPAWN_DISTANCE
+            ),
+            current_home,
+        )
