@@ -9,6 +9,7 @@ EVALUATOR_COLORS = ((255, 140, 0), (0, 255, 255))
 
 def _blit_midleft(surface: pygame.Surface, rgba: np.ndarray,
                   point: tuple[int, int]) -> None:
+    """Draw an RGBA array anchored at its left-side midpoint."""
     h = rgba.shape[1]
     x, y = point
     raster.blit_to_surface(surface, rgba, (x, y - h // 2))
@@ -16,6 +17,7 @@ def _blit_midleft(surface: pygame.Surface, rgba: np.ndarray,
 
 def _blit_center(surface: pygame.Surface, rgba: np.ndarray,
                  point: tuple[int, int]) -> None:
+    """Draw an RGBA array centered on a destination point."""
     w, h = rgba.shape[0], rgba.shape[1]
     x, y = point
     raster.blit_to_surface(surface, rgba, (x - w // 2, y - h // 2))
@@ -23,6 +25,7 @@ def _blit_center(surface: pygame.Surface, rgba: np.ndarray,
 
 def _blit_midright(surface: pygame.Surface, rgba: np.ndarray,
                    point: tuple[int, int]) -> None:
+    """Draw an RGBA array anchored at its right-side midpoint."""
     w, h = rgba.shape[0], rgba.shape[1]
     x, y = point
     raster.blit_to_surface(surface, rgba, (x - w, y - h // 2))

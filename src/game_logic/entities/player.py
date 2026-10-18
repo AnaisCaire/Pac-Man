@@ -26,6 +26,7 @@ class Player(Entity):
                  start_grid_y: int,
                  tile_size: int,
                  config: Config) -> None:
+        """Initialize movement, scoring, lives, and timed player states."""
         super().__init__(start_grid_x, start_grid_y, tile_size)
         self.speed: float = PLAYER_SPEED
         self.next_direction: Tuple[int, int] = (0, 0)
@@ -92,12 +93,7 @@ class Player(Entity):
         if self.is_dying:
             self.death_progress += 0.02
             if self.death_progress >= 1.0:
-                # animation finished — lose a life and start respawn countdown
-                self.death_progress = 1.0
-                self.is_dying = False
-                self.is_alive = False
-                self.lives -= 1
-                self.death_time = current_time
+                self.finish_death(current_time)
 
         # respawn after delay if still has lives
         if not self.is_alive and self.lives > 0:
@@ -116,6 +112,16 @@ class Player(Entity):
             self.death_progress = 0.0
             self.moving = False
             self.current_direction = (0, 0)
+
+    def finish_death(self, current_time: int) -> None:
+        """Consume one life and start the normal respawn window once."""
+        if not self.is_dying:
+            return
+        self.death_progress = 1.0
+        self.is_dying = False
+        self.is_alive = False
+        self.lives -= 1
+        self.death_time = current_time
 
     def respawn(self, current_time: int) -> None:
         """Reset position and state back to the spawn tile."""
@@ -137,9 +143,13 @@ class Player(Entity):
         self.is_powered_up = True
         self.power_up_start_time = current_time
 
-    def check_ghost_collision(self, ghosts: list[Ghost]) -> None:
+    def check_ghost_collision(
+        self,
+        ghosts: list[Ghost],
+        invincible: bool = False,
+    ) -> None:
         """Check if the player overlaps any ghost and react accordingly."""
-        if self.is_dying or not self.is_alive or self.is_invincible:
+        if self.is_dying or not self.is_alive:
             return
 
         for ghost in ghosts:
@@ -147,7 +157,7 @@ class Player(Entity):
                 if ghost.is_frightened:
                     self.score += self.points_per_ghost
                     ghost.die()
-                elif not ghost.is_dead:
+                elif not ghost.is_dead and not self.is_invincible and not invincible:
                     self.start_death_animation()
                     return  # one collision is enough per frame
 
@@ -170,6 +180,7 @@ def resolve_collisions(
     super_pacgums: dict[tuple[int, int], SuperPacgum],
     ghosts: list[Ghost],
     current_time: int,
+    invincible: bool = False,
 ) -> None:
     """Resolve items before ghosts, so a same-tile super-pacgum wins."""
     if player.is_dying or not player.is_alive:
@@ -180,13 +191,14 @@ def resolve_collisions(
     if power_up_activated:
         for ghost in ghosts:
             ghost.frighten(current_time, reverse=False)
-    player.check_ghost_collision(ghosts)
+    player.check_ghost_collision(ghosts, invincible)
     if power_up_activated:
         for ghost in ghosts:
             ghost.frighten(current_time)
 
 
 def handle_input(player: Player, events: list[pygame.event.Event]) -> None:
+    """Queue the latest arrow-key or WASD direction for the player."""
     directions = {
         pygame.K_UP: (0, -1),
         pygame.K_w: (0, -1),

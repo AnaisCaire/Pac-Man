@@ -1,5 +1,5 @@
 from ...scores.model import ScoreEntry
-from .bottons import UIElement
+from .buttons import UIElement
 from ..gfx import bitmap_font, raster
 import pygame
 import pathlib
@@ -11,7 +11,8 @@ LOGO_MAX_WIDTH = 600
 # The bitmap font has no underscore, so the config key is described in words.
 EVALUATOR_HELP = (
     "EVALUATOR MODE: SET EVALUATOR MODE TRUE IN CONFIG",
-    "F: FREEZE   G: SELECT GHOST   IJKL: MOVE GHOST",
+    "F: FREEZE   G: SELECT GHOST OR NONE",
+    "IJKL: MOVE GHOST   I WITH NONE: INVINCIBLE",
     "C: CLEAR LEVEL",
     "EVALUATOR SCORES ARE NOT SAVED",
 )
@@ -33,7 +34,8 @@ def _handle_button_click(event: pygame.event.Event,
 class HighscoreScreen():
     """Display the current Top 10 and return to the main menu."""
 
-    def __init__(self, screen_width: int, screen_height: int):
+    def __init__(self, screen_width: int, screen_height: int) -> None:
+        """Create an empty centered Top 10 board and its Back button."""
         cx = screen_width // 2
         by = screen_height - 150
         self.back_btn = UIElement(center_position=(cx, by), text="Back",
@@ -45,12 +47,15 @@ class HighscoreScreen():
         self.scores = scores
 
     def handle_event(self, event: pygame.event.Event) -> str | None:
+        """Return `back` when the Back button is clicked."""
         return _handle_button_click(event, [self.back_btn])
 
     def update(self, mouse_pos: tuple[int, int]) -> None:
+        """Update the Back button hover state."""
         self.back_btn.update(mouse_pos)
 
     def draw(self, surface: pygame.Surface) -> None:
+        """Draw the Hall of Fame title, aligned rows, and Back button."""
         surface.fill(BG_COLOR)
         title = bitmap_font.render_text("HALL OF FAME", 5, (255, 255, 0))
         raster.blit_to_surface(surface, title, (
@@ -73,7 +78,8 @@ class HighscoreScreen():
 class InstructionsScreen():
     """Show the controls image and a return button."""
 
-    def __init__(self, screen_width: int, screen_height: int):
+    def __init__(self, screen_width: int, screen_height: int) -> None:
+        """Load and fit the controls image above evaluator help and Back."""
         cx = screen_width // 2
         by = screen_height - 50
         self.back_btn = UIElement(center_position=(cx, by), text="Back",
@@ -89,12 +95,15 @@ class InstructionsScreen():
         self.image_rect.center = (cx, img_h // 2 + 10)
 
     def handle_event(self, event: pygame.event.Event) -> str | None:
+        """Return `back` when the Back button is clicked."""
         return _handle_button_click(event, [self.back_btn])
 
     def update(self, mouse_pos: tuple[int, int]) -> None:
+        """Update the Back button hover state."""
         self.back_btn.update(mouse_pos)
 
     def draw(self, surface: pygame.Surface) -> None:
+        """Draw controls, evaluator commands, and the Back button."""
         surface.fill(BG_COLOR)
         raster.blit_to_surface(surface, self.image, self.image_rect.topleft)
         for index, line in enumerate(EVALUATOR_HELP):
@@ -112,7 +121,8 @@ class PauseScreen():
     ACTIONS = {"Resume": "resume", "Return to Menu": "menu"}
     CONFIRM_ACTIONS = {"Keep Playing": "cancel_menu", "Discard Game": "confirm_menu"}
 
-    def __init__(self, screen_width: int, screen_height: int):
+    def __init__(self, screen_width: int, screen_height: int) -> None:
+        """Load the pause logo and build the initial session actions."""
         raw_logo = raster.load_rgba(str(_IMAGES_DIR / "main_screen_logo.png"))
         logo_scale = min(LOGO_MAX_WIDTH / raw_logo.shape[0], 1.0)
         logo_w = int(raw_logo.shape[0] * logo_scale)
@@ -127,6 +137,7 @@ class PauseScreen():
         self._set_actions(self.ACTIONS)
 
     def _set_actions(self, actions: dict[str, str]) -> None:
+        """Replace pause buttons with a centered set of named actions."""
         spacing = BUTTON_FONT_SIZE + 30
         self.buttons = []
         for i, (label, action) in enumerate(actions.items()):
@@ -137,6 +148,7 @@ class PauseScreen():
             ))
 
     def handle_event(self, event: pygame.event.Event) -> str | None:
+        """Handle pause actions and the discard-game confirmation step."""
         action = _handle_button_click(event, self.buttons)
         if action == "menu":
             self.confirming_exit = True
@@ -156,10 +168,12 @@ class PauseScreen():
             self._set_actions(self.ACTIONS)
 
     def update(self, mouse_pos: tuple[int, int]) -> None:
+        """Update every active pause button hover state."""
         for button in self.buttons:
             button.update(mouse_pos)
 
     def draw(self, surface: pygame.Surface) -> None:
+        """Draw the pause logo, optional warning, and active buttons."""
         surface.fill(BG_COLOR)
         raster.blit_to_surface(surface, self.logo, self.logo_rect.topleft)
         if self.confirming_exit:

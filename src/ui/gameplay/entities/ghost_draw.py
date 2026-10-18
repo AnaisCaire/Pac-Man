@@ -41,6 +41,7 @@ def _pick_image_key(ghost: Ghost) -> str:
 
 
 def _scaled_image(key: str, tile_size: int) -> np.ndarray:
+    """Return and cache one ghost sprite at the requested tile size."""
     cache_key = (key, tile_size)
     scaled = _SCALED_CACHE.get(cache_key)
     if scaled is None:

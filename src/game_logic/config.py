@@ -1,6 +1,6 @@
 import json
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 from pathlib import Path
 from typing import Any
 
@@ -89,6 +89,18 @@ def _string_value(raw: object, default: str, field_name: str) -> str:
     return raw
 
 
+def _highscore_filename_value(raw: object, default: str) -> str:
+    """Return any non-empty filename whose extension identifies JSON."""
+    filename = _string_value(raw, default, "highscore_filename")
+    if Path(filename).suffix.lower() != ".json":
+        _warning(
+            "highscore_filename",
+            f"must end with .json, got {filename}; using {default}",
+        )
+        return default
+    return filename
+
+
 def _level_size(raw: object, index: int) -> LevelMazeSize:
     """Normalize one level entry without invalidating its siblings."""
     default = LevelMazeSize()
@@ -139,6 +151,8 @@ def _level_size(raw: object, index: int) -> LevelMazeSize:
 
 def _levels_value(raw: object, default: list[LevelMazeSize]) -> list[LevelMazeSize]:
     """Normalize at least ten generator-safe levels."""
+    if raw is default:
+        return default
     if not isinstance(raw, list) or not raw:
         _warning("level", "expected non-empty list; using default levels")
         return default
@@ -155,11 +169,16 @@ def _levels_value(raw: object, default: list[LevelMazeSize]) -> list[LevelMazeSi
 def _config_from_dict(data: dict[str, Any]) -> Config:
     """Build a Config by validating each known key independently."""
     defaults = Config()
+    for config_field in fields(Config):
+        if config_field.name not in data:
+            _warning(
+                config_field.name,
+                f"missing; using {getattr(defaults, config_field.name)}",
+            )
     return Config(
-        highscore_filename=_string_value(
+        highscore_filename=_highscore_filename_value(
             data.get("highscore_filename", defaults.highscore_filename),
             defaults.highscore_filename,
-            "highscore_filename",
         ),
         level=_levels_value(data.get("level", defaults.level), defaults.level),
         lives=_int_value(data.get("lives", defaults.lives), defaults.lives, "lives", 1),

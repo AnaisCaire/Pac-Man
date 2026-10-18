@@ -86,6 +86,8 @@ class InstructionsScreenTests(unittest.TestCase):
         self.assertIn("F:", text)
         self.assertIn("G:", text)
         self.assertIn("IJKL:", text)
+        self.assertIn("NONE", text)
+        self.assertIn("INVINCIBLE", text)
         self.assertIn("C:", text)
         self.assertIn("L:", text)
         self.assertIn("NOT SAVED", text)

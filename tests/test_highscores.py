@@ -58,7 +58,17 @@ class HighscoreTests(unittest.TestCase):
             path = Path(directory) / "scores.json"
             self.assertEqual(load_highscores(path), [])
             path.write_text("not json", encoding="utf-8")
-            self.assertEqual(load_highscores(path), [])
+            with self.assertLogs("src.scores.scores_utils", level="WARNING"):
+                self.assertEqual(load_highscores(path), [])
+
+    def test_invalid_highscore_shape_logs_and_recovers_to_empty_scores(self) -> None:
+        """Valid JSON with the wrong schema never crashes or masquerades as data."""
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "scores.json"
+            path.write_text('{"highscores": "not a list"}', encoding="utf-8")
+
+            with self.assertLogs("src.scores.scores_utils", level="WARNING"):
+                self.assertEqual(load_highscores(path), [])
 
     def test_save_round_trip_uses_configured_data_directory(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

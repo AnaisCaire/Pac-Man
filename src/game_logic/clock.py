@@ -21,6 +21,7 @@ class ProjectClock:
         monotonic: Callable[[], float] = time.monotonic,
         sleep: Callable[[float], None] = time.sleep,
     ) -> None:
+        """Initialize the clock with injectable monotonic and sleep functions."""
         self._monotonic = monotonic
         self._sleep = sleep
         self._start = monotonic()

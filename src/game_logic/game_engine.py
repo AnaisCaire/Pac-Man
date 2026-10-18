@@ -196,11 +196,14 @@ def handle_evaluator_input(
         elif event.key == pygame.K_c:
             evaluator.clear_level(pacgums, super_pacgums)
         elif event.key in manual_directions:
-            evaluator.move_selected_ghost(
-                ghosts,
-                maze,
-                manual_directions[event.key],
-            )
+            if event.key == pygame.K_i and evaluator.selected_ghost is None:
+                evaluator.toggle_invincibility()
+            else:
+                evaluator.move_selected_ghost(
+                    ghosts,
+                    maze,
+                    manual_directions[event.key],
+                )
 
 
 def _run_gameplay(screen: pygame.Surface, clock: ProjectClock,
@@ -268,8 +271,6 @@ def _run_gameplay(screen: pygame.Surface, clock: ProjectClock,
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-            # Original review note: Maybe change track in "escape menu" too?
-            # Post-fix: deferred; pause-specific music is audio polish, not #7.
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 clock.pause()
                 paused = True
@@ -289,9 +290,6 @@ def _run_gameplay(screen: pygame.Surface, clock: ProjectClock,
                         if action == "resume":
                             pause_menu.cancel_confirmation()
                             paused = False
-                        # Original review note: menu track may be okay here;
-                        # check later.
-                        # Post-fix: kept current menu track.
                         elif action == "menu":
                             pause_menu.cancel_confirmation()
                             clock.resume()
@@ -327,12 +325,14 @@ def _run_gameplay(screen: pygame.Surface, clock: ProjectClock,
             super_pacgums,
             ghost_list,
             current_time,
+            invincible=evaluator_mode.invincible,
         )
         if player.is_dying:
             level_timer.pause(current_time)
             if not death_transition_handled:
                 _move_ghosts_away_from_spawn(ghost_list, player)
                 death_transition_handled = True
+        evaluator_mode.resolve_frozen_death(player, current_time)
         player.update_timers(current_time)
         if player.is_alive and not player.is_dying:
             level_timer.resume(current_time)
@@ -369,13 +369,18 @@ def _run_gameplay(screen: pygame.Surface, clock: ProjectClock,
 
 
 def game_loop(config: Config) -> None:
+    """Run the menu and gameplay state machine until the user exits.
+
+    Args:
+        config: Validated game settings for levels, scoring, and evaluator mode.
+
+    Returns:
+        None. The loop exits the process in response to the window or Exit action.
+    """
     pygame.init()
 
     screen = pygame.display.set_mode((WINDOW_SIZE, WINDOW_SIZE + HUB_HEIGHT))
     pygame.display.set_caption("Pac-Man")
-    # Original review note: set pygame.display.set_icon to change the window
-    # icon; Pac-Man with mouth open could work.
-    # Post-fix: deferred to #10 asset policy; no new icon asset in this cleanup.
     clock = ProjectClock()
     music = MusicManager.initialize()
     highscore_path = resolve_highscore_path(
@@ -451,36 +456,16 @@ def game_loop(config: Config) -> None:
                 initial_score=session.score,
                 initial_lives=session.lives
             )
-            # Original review note: winning a level should advance to the next
-            # level with the same lives and points.
-            # Post-fix: already true in this branch; no behavior change needed.
-            # Original review note: maybe add a "Next level: X" transition and
-            # its own music track.
-            # Post-fix: deferred; transition timing/music is UX scope, not this
-            # cleanup.
             if next_state == GameState.VICTORY:
                 state = transition_session(session, next_state, len(config.level))
-                # Original review note: this case is actually winning the
-                # whole game; change track before setting the state.
-                # Post-fix: deferred; winning-track work belongs to audio polish.
                 if state is GameState.VICTORY:
-                    # Original review note: Maybe winning track?
-                    # Post-fix: deferred; no new track assets in #4.
                     music.play("menu")
                     victory_menu.set_score(
                         session.score,
                         evaluator_run=config.evaluator_mode,
                     )
-                # Original review note: This is going to the next level not
-                # state = GameState.IN_GAME, should load next level instead
-                # Post-fix: kept state transition; next loop loads next level
-                # with a fresh random seed via select_level_seed().
                 else:
                     state = GameState.IN_GAME
-            # Original review note: game over needs an end track and username
-            # registration for highscores.
-            # Post-fix: deferred to highscore/audio content work; this cleanup
-            # keeps existing menu music behavior.
             elif next_state == GameState.GAME_OVER:
                 music.play("menu")
                 gameover_menu.set_score(
@@ -494,10 +479,6 @@ def game_loop(config: Config) -> None:
                 music.play("menu")
                 state = GameState.MAIN_MENU
 
-        # Original review note: Game Over should register username for the
-        # highscore screen and change music.
-        # Post-fix: documented as follow-up; no highscore/audio content change
-        # in this cleanup.
         elif state == GameState.GAME_OVER:
             for event in events:
                 gameover_action = gameover_menu.handle_event(event)
@@ -518,9 +499,6 @@ def game_loop(config: Config) -> None:
             gameover_menu.update(pygame.mouse.get_pos())
             gameover_menu.draw(screen)
 
-        # Original review note: Victory needs the same transition/highscore
-        # cleanup mentioned from IN_GAME.
-        # Post-fix: documented as follow-up; no transition behavior added here.
         elif state == GameState.VICTORY:
             for event in events:
                 victory_action = victory_menu.handle_event(event)

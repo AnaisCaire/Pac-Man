@@ -5,10 +5,6 @@ import pygame
 
 _SOUNDS_DIR = pathlib.Path(__file__).parent / "sounds"
 
-# Original review note: check for more original-game audio so we can use it in
-# matching situations.
-# Post-fix: keep only menu/game tracks until matching assets and call sites are
-# added deliberately.
 _TRACKS = {
     "menu": ["menu.ogg", "menu.mp3", "menu.wav"],
     "game": ["game.ogg", "game.mp3", "game.wav"],
@@ -16,6 +12,7 @@ _TRACKS = {
 
 
 def _find_track(name: str) -> pathlib.Path | None:
+    """Return the first existing supported file for a named music track."""
     for filename in _TRACKS[name]:
         path = _SOUNDS_DIR / filename
         if path.exists():
@@ -33,6 +30,7 @@ class MusicManager:
     """
 
     def __init__(self, enabled: bool = True) -> None:
+        """Create an enabled or intentionally silent music adapter."""
         self._enabled = enabled
         self._warned = False
         self._current: str | None = None
