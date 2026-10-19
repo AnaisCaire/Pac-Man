@@ -71,18 +71,22 @@ clear warning without traceback.
 - Simulate a failed write and preserve prior data.
 - Restart and confirm the board persists.
 
-## 7. Packaged-build acceptance (pending #12)
+## 7. Packaged-build acceptance
 
-For both Windows and Linux artifacts, outside the source checkout:
+Verified from a clean clone on Windows and Linux x86_64:
 
-- install/launch from the packaged layout;
-- verify bundled config, images, sounds, bitmap font and game flow;
-- verify behavior with and without audio hardware;
-- verify a writable highscore location and persistence across restart;
-- execute Pause and evaluator-assisted win/loss;
-- confirm no development-only path, `.venv`, `docs/`, `.hermes/`, cache, secret
-  or local backup is included;
-- record OS, artifact filename, size, SHA-256 and exact result.
+- uv installs the locked dependencies and `make package` builds each native app;
+- both archives contain executable, config, instructions, images and sounds;
+- both extracted apps remain running outside the checkout with dummy SDL;
+- both remain running with an intentionally unavailable audio driver;
+- archive scans contain no `.venv`, `docs/`, `.hermes/`, cache, secret or backup;
+- sizes, SHA-256 hashes and 26 s/30 s build times are recorded in
+  `package-evidence.md`.
+
+Still pending before release:
+
+- manually execute menu, gameplay, Pause and evaluator-assisted win/loss;
+- submit a highscore and prove persistence after packaged restart on both OSes.
 
 ## 8. Public-platform and regeneration acceptance (pending #12)
 
