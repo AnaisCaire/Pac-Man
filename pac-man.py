@@ -3,6 +3,8 @@
 import argparse
 from collections.abc import Sequence
 import os
+from pathlib import Path
+import sys
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -21,6 +23,11 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: Sequence[str] | None = None) -> None:
     """Parse command-line arguments and start the game."""
+    if argv is None and getattr(sys, "frozen", False) and len(sys.argv) == 1:
+        config_path = Path(sys.executable).resolve().with_name("config.json")
+        if not config_path.is_file() and hasattr(sys, "_MEIPASS"):
+            config_path = Path(sys._MEIPASS) / "config.json"
+        argv = [str(config_path)]
     parser = build_parser()
     arguments = parser.parse_args(argv)
     if not arguments.config_file.endswith(".json"):

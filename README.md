@@ -141,6 +141,10 @@ A failed save preserves the previous data. A missing file starts an empty
 board; malformed JSON or an invalid top-level highscore structure logs a clear
 warning and also recovers to an empty board without crashing.
 
+Packaged builds store relative highscore paths in writable user data instead
+of the installation directory: `%APPDATA%/Pac-Man/` on Windows and
+`$XDG_DATA_HOME/pacman/` (or `~/.local/share/pacman/`) on Linux.
+
 ## Maze Generation
 
 The assigned external artifact is tracked unchanged as
@@ -207,10 +211,27 @@ function-by-function MLX-equivalence audit are recorded in project management.
 | `make clean` | Remove Python and analysis caches. |
 | `make lint` | Run flake8 and mypy with the subject's mandatory flags. |
 | `make test` | Run the unittest suite. |
+| `make package` | Build and archive the native PyInstaller package for the current OS. |
 
 Every production class and function has a purpose docstring, and public
 boundaries use type hints. Behavior changes are protected with focused tests
 before the full quality gates.
+
+## Packaging
+
+Packaging uses the checked-in `pac-man.spec` through `scripts/package.py` and
+the uv development environment. `make package` creates one native `onedir`
+bundle and archive under `dist/`:
+
+- `pac-man-windows-x86_64.zip` when run on Windows;
+- `pac-man-linux-x86_64.tar.gz` when run on Linux x86_64.
+
+PyInstaller does not cross-compile, so each artifact must be generated on its
+target operating system. The executable launches with the editable
+`config.json` beside it; command-line users may still supply another JSON path.
+`PACKAGE-INSTRUCTIONS.txt` is included at the package root. Build directories
+and archives remain ignored; release evidence records their hashes and smoke
+results in `project-management/package-evidence.md`.
 
 ## Project Management
 
@@ -222,6 +243,7 @@ a milestone and Project 11. Versioned evidence is indexed in the
 - [planned work versus actual delivery](project-management/progress.md);
 - [risk register](project-management/risks.md);
 - [acceptance test plan](project-management/acceptance-test-plan.md);
+- [package and regeneration evidence](project-management/package-evidence.md);
 - [ADR-0001: Pygame vs. MLX frontend](project-management/decisions/ADR-0001-pygame-vs-mlx-frontend.md);
 - [Pygame/MLX API matrix](project-management/audits/pygame-mlx-api-matrix.md).
 

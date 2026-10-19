@@ -1,0 +1,35 @@
+Pac-Man — packaged build
+========================
+
+Launch
+------
+Windows: double-click Pac-Man.exe.
+Linux: run ./Pac-Man from a terminal or desktop launcher.
+
+The executable uses the config.json beside it when launched without arguments.
+Advanced users may pass another JSON configuration path from a terminal.
+
+Controls
+--------
+Arrow keys or W/A/S/D: move Pac-Man
+Escape: Pause
+Mouse: menus
+
+Evaluator mode
+--------------
+Set "evaluator_mode": true in config.json.
+F: Freeze
+G: cycle Blinky, Pinky, Inky, Clyde, then no selection
+I/J/K/L: move the selected ghost
+I with no selected ghost while frozen: toggle invincibility
+C: clear the current level
+Evaluator scores are never saved.
+
+Highscores
+----------
+Relative highscore paths are stored in a writable user-data directory:
+Windows: %APPDATA%\Pac-Man\
+Linux: $XDG_DATA_HOME/pacman/ or ~/.local/share/pacman/
+
+The game creates the JSON file when the first score is submitted. Missing or
+corrupt files recover safely to an empty Hall of Fame.

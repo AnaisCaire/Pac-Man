@@ -7,6 +7,7 @@ import logging
 import os
 import tempfile
 from pathlib import Path
+import sys
 
 from .model import ScoreEntry
 
@@ -15,8 +16,19 @@ logger = logging.getLogger(__name__)
 
 
 def resolve_highscore_path(filename: str) -> Path:
-    """Use the configured highscore path exactly as supplied."""
-    return Path(filename)
+    """Resolve relative packaged scores beneath a writable user-data directory."""
+    path = Path(filename)
+    if not getattr(sys, "frozen", False) or path.is_absolute():
+        return path
+    if sys.platform == "win32":
+        data_root = Path(
+            os.environ.get("APPDATA", Path.home() / "AppData" / "Roaming")
+        ) / "Pac-Man"
+    else:
+        data_root = Path(
+            os.environ.get("XDG_DATA_HOME", Path.home() / ".local" / "share")
+        ) / "pacman"
+    return data_root / path
 
 
 def rank_scores(scores: list[ScoreEntry]) -> list[ScoreEntry]:

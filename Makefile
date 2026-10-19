@@ -1,7 +1,7 @@
 PYTHON := uv run python
 CONFIG ?= config.json
 
-.PHONY: install run debug clean lint test
+.PHONY: install run debug clean lint test package
 
 install:
 	uv sync
@@ -23,3 +23,6 @@ lint:
 
 test:
 	$(PYTHON) -m unittest discover -s tests -v
+
+package:
+	$(PYTHON) scripts/package.py
