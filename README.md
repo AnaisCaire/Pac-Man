@@ -215,16 +215,20 @@ before the full quality gates.
 ## Project Management
 
 The recovery roadmap is tracked through GitHub issues, reviewed pull requests,
-a milestone and Project 11. The repository currently contains the accepted
-frontend decision and its complete API audit:
+a milestone and Project 11. Versioned evidence is indexed in the
+[project-management directory](project-management/README.md), including:
 
-- [ADR-0001: Pygame vs. MLX frontend](project-management/decisions/ADR-0001-pygame-vs-mlx-frontend.md)
-- [Pygame/MLX API matrix](project-management/audits/pygame-mlx-api-matrix.md)
+- [retrospective timeline and Gantt](project-management/timeline.md);
+- [planned work versus actual delivery](project-management/progress.md);
+- [risk register](project-management/risks.md);
+- [acceptance test plan](project-management/acceptance-test-plan.md);
+- [ADR-0001: Pygame vs. MLX frontend](project-management/decisions/ADR-0001-pygame-vs-mlx-frontend.md);
+- [Pygame/MLX API matrix](project-management/audits/pygame-mlx-api-matrix.md).
 
-Timeline, progress comparison, team organization, risks, blockers and the final
-acceptance plan will be completed in `project-management/` after the team agrees
-on its evidence strategy. This pending documentation is tracked by issue #11;
-it is intentionally not fabricated in advance.
+Completed dates and status are reconstructed from GitHub records. Team roles
+and decision-process evidence remain pending confirmation from both
+contributors; packaging and deployment rows remain pending until #12 produces
+real Windows/Linux artifacts and a verified Itch.io URL.
 
 ## Resources
 
