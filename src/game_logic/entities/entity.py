@@ -12,6 +12,7 @@ class Entity:
                  start_grid_x: int,
                  start_grid_y: int,
                  tile_size: int) -> None:
+        """Initialize grid position, tile geometry, and stationary movement."""
         self.grid_x: int = start_grid_x
         self.grid_y: int = start_grid_y
         self.tile_size: int = tile_size
@@ -20,6 +21,7 @@ class Entity:
         self.speed: float = 0.0
 
     def _can_move(self, maze: Maze, direction: Tuple[int, int]) -> bool:
+        """Return whether the current cell has no wall toward `direction`."""
         dir_to_wall = {(0, -1): 'N', (1, 0): 'E', (0, 1): 'S', (-1, 0): 'W'}
         wall = dir_to_wall.get(direction)
         if wall is None:

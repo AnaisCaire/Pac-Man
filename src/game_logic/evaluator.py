@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from .entities.ghosts import Ghost
     from .entities.items import Pacgum, SuperPacgum
+    from .entities.player import Player
     from .maze import Maze
 
 
@@ -27,6 +28,7 @@ class EvaluatorMode:
     frozen_at: int | None = None
     frozen_ms: int = 0
     selected_ghost: int | None = None
+    invincible: bool = False
 
     @property
     def frozen(self) -> bool:
@@ -39,6 +41,8 @@ class EvaluatorMode:
         if not self.enabled:
             return ()
         lines = ["EVALUATOR FREEZE" if self.frozen else "EVALUATOR"]
+        if self.invincible:
+            lines.append("INVINCIBLE")
         if self.selected_ghost is not None:
             lines.append(f"SELECTED {GHOST_NAMES[self.selected_ghost]}")
         return tuple(lines)
@@ -66,10 +70,25 @@ class EvaluatorMode:
         """Cycle the selected ghost while evaluator freeze is active."""
         if not self.enabled or not self.frozen or ghost_count == 0:
             return
-        self.selected_ghost = (
-            0 if self.selected_ghost is None
-            else (self.selected_ghost + 1) % ghost_count
-        )
+        if self.selected_ghost is None:
+            self.selected_ghost = 0
+        elif self.selected_ghost + 1 == ghost_count:
+            self.selected_ghost = None
+        else:
+            self.selected_ghost += 1
+
+    def toggle_invincibility(self) -> None:
+        """Toggle protection while frozen and no ghost control is active."""
+        if self.enabled and self.frozen and self.selected_ghost is None:
+            self.invincible = not self.invincible
+
+    def resolve_frozen_death(self, player: Player, current_time: int) -> None:
+        """Finish one evaluator death immediately without leaving Freeze."""
+        if not self.enabled or not self.frozen or not player.is_dying:
+            return
+        player.finish_death(current_time)
+        if player.lives > 0:
+            player.respawn(current_time)
 
     def move_selected_ghost(
         self,

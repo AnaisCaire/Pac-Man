@@ -38,6 +38,7 @@ class UIElement:
         font_size: int,
         action: str = "",
     ) -> None:
+        """Build normal and highlighted button images around one center point."""
         self.mouse_over = False
         self.action = action
 
@@ -61,13 +62,16 @@ class UIElement:
     # properties that vary the image and its rect when the mouse is over the element
     @property
     def image(self) -> np.ndarray:
+        """Return the image matching the current hover state."""
         return self.images[1] if self.mouse_over else self.images[0]
 
     @property
     def rect(self) -> pygame.Rect:
+        """Return the hit box matching the current hover state."""
         return self.rects[1] if self.mouse_over else self.rects[0]
 
     def update(self, mouse_pos: tuple[int, int]) -> None:
+        """Update hover state from the current mouse position."""
         if self.rect.collidepoint(mouse_pos):
             self.mouse_over = True
         else:

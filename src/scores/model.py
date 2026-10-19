@@ -13,6 +13,7 @@ class ScoreEntry:
     score: int
 
     def __post_init__(self) -> None:
+        """Normalize the name and reject invalid names or negative scores."""
         normalized = self.name.strip()
         if not normalized or len(normalized) > 10:
             raise ValueError("name must contain 1 to 10 characters")

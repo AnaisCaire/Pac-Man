@@ -76,35 +76,24 @@ class FreezeCollisionFrameTests(unittest.TestCase):
         distant._manage_state_timers(evaluator.game_time(14_100))
         self.assertEqual(distant.state, GhostState.CHASE)
 
-    def test_death_while_frozen_costs_one_life_and_waits_for_unfreeze(
+    def test_death_while_frozen_costs_one_life_and_respawns_immediately(
         self,
     ) -> None:
-        """Repeated frozen collision frames lose one life; respawn waits."""
+        """Freeze remains useful after a lethal collision without unfreezing."""
         evaluator = EvaluatorMode(enabled=True)
         player = Player(1, 1, 16, Config(lives=2))
         ghost = Ghost(1, 1, 16, player, 0, random.Random(1))
         evaluator.toggle_freeze(1000)
 
-        for real_time in range(1000, 20_000, 16):
-            game_time = evaluator.game_time(real_time)
-            resolve_collisions(player, {}, {}, [ghost], game_time)
-            player.update_timers(game_time)
+        game_time = evaluator.game_time(20_000)
+        resolve_collisions(player, {}, {}, [ghost], game_time)
+        evaluator.resolve_frozen_death(player, game_time)
 
         self.assertEqual(player.lives, 1)
-        self.assertFalse(player.is_alive)
-
-        evaluator.toggle_freeze(20_000)
-        player.update_timers(evaluator.game_time(22_999))
-        self.assertFalse(player.is_alive)
-
-        player.update_timers(evaluator.game_time(23_000))
-        resolve_collisions(
-            player, {}, {}, [ghost], evaluator.game_time(23_000))
-
         self.assertTrue(player.is_alive)
         self.assertTrue(player.is_invincible)
         self.assertFalse(player.is_dying)
-        self.assertEqual(player.lives, 1)
+        self.assertTrue(evaluator.frozen)
 
 
 class PauseCollisionFrameTests(unittest.TestCase):

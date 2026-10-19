@@ -11,8 +11,24 @@ or blend step of its own.
 
 from __future__ import annotations
 
+import logging
+
 import numpy as np
 import pygame
+
+
+logger = logging.getLogger(__name__)
+_PLACEHOLDER_SIZE = 16
+
+
+def _placeholder_rgba() -> np.ndarray:
+    """Return a visible opaque marker for an unavailable optional image."""
+    image = np.zeros((_PLACEHOLDER_SIZE, _PLACEHOLDER_SIZE, 4), dtype=np.uint8)
+    image[:, :, (0, 2, 3)] = 255
+    diagonal = np.arange(_PLACEHOLDER_SIZE)
+    image[diagonal, diagonal, :3] = 0
+    image[diagonal, _PLACEHOLDER_SIZE - diagonal - 1, :3] = 0
+    return image
 
 
 def load_rgba(path: str) -> np.ndarray:
@@ -22,17 +38,17 @@ def load_rgba(path: str) -> np.ndarray:
     pixel data pygame's PNG/XPM loader already decoded, not its blit-time
     blending behaviour.
     """
-    # Original review note: We should look up if we can use image.load and
-    # surfarray.array3d from pygame or we should reimplement those too.
-    # Post-fix: deferred to #10 asset-loading policy; #4 only needs the
-    # observation traced, not a graphics-loader rewrite.
-    surface = pygame.image.load(path)
-    rgb = pygame.surfarray.array3d(surface)
     try:
-        alpha = pygame.surfarray.array_alpha(surface)
-    except ValueError:
-        alpha = np.full(rgb.shape[:2], 255, dtype=np.uint8)
-    return np.dstack((rgb, alpha)).astype(np.uint8)
+        surface = pygame.image.load(path)
+        rgb = pygame.surfarray.array3d(surface)
+        try:
+            alpha = pygame.surfarray.array_alpha(surface)
+        except ValueError:
+            alpha = np.full(rgb.shape[:2], 255, dtype=np.uint8)
+        return np.dstack((rgb, alpha)).astype(np.uint8)
+    except (OSError, pygame.error, ValueError) as error:
+        logger.warning("cannot load image %s: %s; using placeholder", path, error)
+        return _placeholder_rgba()
 
 
 def nearest_neighbor_scale(rgba: np.ndarray, width: int, height: int) -> np.ndarray:

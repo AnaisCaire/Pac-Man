@@ -20,6 +20,7 @@ MENU_ACTION = "menu"
 
 def _draw_center(surface: pygame.Surface, text: str, y: int,
                  color: tuple[int, int, int]) -> None:
+    """Render one bitmap-font line centered at vertical coordinate `y`."""
     image = bitmap_font.render_text(text, _FONT_SCALE, color)
     raster.blit_to_surface(
         surface,
@@ -32,6 +33,7 @@ class ScoreEntryScreen:
     """Collect one validated player name before returning to the main menu."""
 
     def __init__(self, screen_width: int, screen_height: int, image_name: str) -> None:
+        """Load the end-state image and initialize an empty score form."""
         self.score = 0
         self.name = ""
         self.error: str | None = None
@@ -58,6 +60,7 @@ class ScoreEntryScreen:
         return ScoreEntry(self.name, self.score)
 
     def handle_event(self, event: pygame.event.Event) -> str | None:
+        """Edit the player name or return the resulting navigation action."""
         if self.evaluator_run:
             is_enter = event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN
             return MENU_ACTION if is_enter else None
@@ -77,6 +80,7 @@ class ScoreEntryScreen:
         return None
 
     def _submit(self) -> str | None:
+        """Validate the current entry and return `submit` only when valid."""
         try:
             self.score_entry()
         except ValueError as error:
@@ -88,6 +92,7 @@ class ScoreEntryScreen:
         """Keep the screen adapter contract; keyboard input needs no hover state."""
 
     def draw(self, surface: pygame.Surface) -> None:
+        """Draw final score, name input, validation, and evaluator messages."""
         surface.fill(_BG_COLOR)
         raster.blit_to_surface(surface, self.image, self.image_rect.topleft)
         text_y = max(self.image_rect.bottom + 20, surface.get_height() - 260)

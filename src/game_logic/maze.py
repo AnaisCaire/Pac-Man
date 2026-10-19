@@ -41,6 +41,7 @@ class Maze:
         seed: int,
         grid_factory: Callable[[LevelMazeSize, int], list[list[int]]] = _generate_grid,
     ) -> None:
+        """Generate and validate one maze for the requested size and seed."""
         self.grid = grid_factory(maze_size, seed)
         self._validate_grid(maze_size)
         self.width = len(self.grid[0])

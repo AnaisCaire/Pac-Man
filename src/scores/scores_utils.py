@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import tempfile
 from pathlib import Path
@@ -10,6 +11,7 @@ from pathlib import Path
 from .model import ScoreEntry
 
 _MAX_SCORES = 10
+logger = logging.getLogger(__name__)
 
 
 def resolve_highscore_path(filename: str) -> Path:
@@ -31,8 +33,19 @@ def load_highscores(path: Path) -> list[ScoreEntry]:
         data = json.loads(path.read_text(encoding="utf-8"))
         raw_scores = data["highscores"]
         if not isinstance(raw_scores, list):
+            logger.warning(
+                "invalid highscore list in %s; using an empty board",
+                path,
+            )
             return []
-    except (OSError, json.JSONDecodeError, KeyError, TypeError):
+    except FileNotFoundError:
+        return []
+    except (OSError, json.JSONDecodeError, KeyError, TypeError) as error:
+        logger.warning(
+            "cannot load highscores from %s: %s; using an empty board",
+            path,
+            error,
+        )
         return []
 
     scores: list[ScoreEntry] = []

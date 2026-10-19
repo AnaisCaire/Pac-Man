@@ -1,222 +1,260 @@
+*This project has been created as part of the 42 curriculum by masenjo, acaire-d.*
+
 # Pac-Man
-Recreate the famous arcade game Pac-Man with a modern Python codebase, a clean
-project structure, and a deployable build.
+
+## Description
+
+Pac-Man is a configurable recreation of the arcade game written in Python 3.10+
+and rendered with Pygame. Each level uses the assigned A-Maze-ing package to
+build a new maze containing Pac-Man, four ghosts, pacgums and four
+super-pacgums. The game includes ten levels, persistent highscores, Pause,
+evaluator controls, complete win/loss flows and graceful audio/image fallbacks.
+
+The implementation keeps game rules separate from rendering and external I/O.
+Small adapter boundaries cover maze generation, clocks, scores, audio and pixel
+rendering without introducing a general framework.
 
 ## Requirements
 
-- Python 3.10 or later
-- [uv](https://docs.astral.sh/uv/)
+- Python 3.10 or later.
+- [uv](https://docs.astral.sh/uv/).
+- A graphical environment supported by Pygame.
 
-## Installation
+## Instructions
+
+Install the locked dependencies:
 
 ```console
 make install
 ```
 
-## Usage
-
-Pac-Man accepts exactly one positional argument: the path to its commented
-JSON configuration file.
-
-```console
-python3 pac-man.py config.json
-```
-
-The Makefile launches the same command with the repository configuration:
+Run the game with the delivered configuration:
 
 ```console
 make run
 ```
 
-To launch a different configuration through Make:
+The canonical direct invocation accepts exactly one JSON configuration path:
 
 ```console
-make run CONFIG=path/to/config.json
+python3 pac-man.py config.json
 ```
 
-Use the built-in help for the complete command-line explanation:
+A different configuration can be supplied through Make:
 
 ```console
-python3 pac-man.py --help
+make run CONFIG=path/to/custom-name.json
 ```
 
-Invalid argument counts print a concise usage error to standard error and exit
-without starting the game.
+The configuration filename itself is arbitrary, but both the configuration
+file and `highscore_filename` must end in `.json`. Argument and configuration
+errors produce clear messages without a Python traceback.
 
-Configuration files must use the `.json` extension. Blank lines and full-line
-comments whose first non-space character is `#` are allowed; `#` characters
-inside JSON strings are preserved. Unknown keys are ignored. Missing,
-unreadable, malformed, or unsafe values are reported clearly and recovered with
-safe defaults or clamps without discarding valid sibling settings.
+### Controls
 
-## Development commands
-
-| Command | Purpose |
+| Key/input | Action |
 |---|---|
-| `make install` | Create or synchronize the uv environment. |
-| `make lint` | Run flake8 and the mandatory mypy checks. |
-| `make test` | Run the automated CLI contract tests. |
-| `make debug` | Start Pac-Man under Python's built-in `pdb` debugger. |
-| `make clean` | Remove Python caches and local analysis output. |
+| Arrow keys or `W` `A` `S` `D` | Move Pac-Man. |
+| `Escape` | Open the Pause menu. |
+| Mouse | Select menu and Pause actions. |
+| Text, Backspace, Enter | Enter and submit a highscore name after Victory or Game Over. |
 
+### Game flow
 
-## Evaluator mode (cheat mode)
+1. Main Menu → Start Game.
+2. Eat every pacgum and super-pacgum before the level timer expires.
+3. Keep the current score and remaining lives between levels.
+4. Finish level 10 to win, or lose every life to reach Game Over.
+5. Enter a name and submit the score.
+6. Return to the Main Menu and use View Highscores to display the Top 10.
 
-Evaluator mode exists so a peer reviewer can reach every game state quickly. It
-is off in the delivered `config.json` and cannot be switched on from inside the
-game, so a normal player can never trigger it by accident.
+The HUD always shows score, lives, level and remaining time. Pause freezes the
+complete simulation. Returning to the menu requires confirmation because the
+current score is discarded.
 
-To enable it, copy the configuration, set the key to `true`, and launch with
-the copy:
+### Evaluator mode
 
-```jsonc
+Evaluator mode helps peer reviewers reach difficult states quickly. It is off
+in the delivered configuration and cannot be enabled from inside the game.
+Create or edit a configuration with:
+
+```json
 "evaluator_mode": true
 ```
 
-```console
-make run CONFIG=path/to/evaluator_config.json
-```
+Evaluator runs are visibly marked and never saved to the highscore board.
 
-While it is enabled, the HUD always shows `EVALUATOR` in the bottom-left
-corner. With it disabled, all evaluator keys do nothing.
+| Key | Action |
+|---|---|
+| `F` | Toggle Evaluator Freeze. Pac-Man and collisions remain active; ghosts and simulation timers stop. |
+| `G` | While frozen, cycle Blinky → Pinky → Inky → Clyde → no selected ghost. |
+| `I` `J` `K` `L` | Move the selected ghost one valid tile up, left, down or right. |
+| `I` with no selected ghost while frozen | Toggle invincibility; frightened ghosts remain edible. |
+| `C` | Remove remaining collectibles and trigger the normal level-complete flow without awarding points. |
 
-| Key | Action | Repeated presses |
-|---|---|---|
-| `F` | Evaluator Freeze: ghosts stop moving; the level timer, power-pellet, respawn, invincibility and ghost state timers stop. Pac-Man still moves, eats, and collides. The HUD adds `FREEZE`. | Toggles. Unfreezing continues every timer from where it stopped, without a jump. |
-| `G` | Select the next ghost while frozen. The HUD shows `SELECTED` and its name. | Cycles Blinky, Pinky, Inky, Clyde. Does nothing outside Freeze. |
-| `I` `J` `K` `L` | Move the selected ghost one walkable tile up, left, down, or right while frozen. | Each valid key press moves one tile; walls and map edges are ignored. |
-| `C` | Clear level: removes every remaining pacgum and super-pacgum, so the normal level-complete transition runs. No points are awarded. | Idempotent. Waits for an ongoing death to resolve first. |
+A lethal collision during Evaluator Freeze consumes one life and immediately
+respawns Pac-Man without leaving Freeze, so the review session cannot become
+stuck. The last life still ends the game normally.
 
-Pause and Evaluator Freeze are different:
+## Configuration
 
-| | `Escape` Pause | `F` Evaluator Freeze |
-|---|---|---|
-| Available | Always | Only in evaluator mode |
-| Screen | Pause menu | Normal game view with `FREEZE` on the HUD |
-| Pac-Man | Stopped | Moves, eats, and collides |
-| Ghosts | Stopped | Stopped |
-| Level, power-pellet, respawn and ghost timers | Stopped | Stopped |
+The parser accepts standard JSON plus blank lines and full-line comments whose
+first non-space character is `#`. A `#` inside a JSON string is preserved.
+Unknown keys are ignored.
 
-The two combine safely: pausing while frozen and resuming leaves the game
-frozen, with no time jump.
+| Key | Default | Rules |
+|---|---:|---|
+| `highscore_filename` | `scores/high_scores.json` | Non-empty path ending in `.json`; any valid JSON filename is accepted. |
+| `level` | ten `15x15` levels | Non-empty list; extended to at least 10 levels; width/height clamped to `15..18`. |
+| `lives` | `3` | Integer at least 1. |
+| `pacgum` | `42` | Non-negative integer. |
+| `points_per_pacgum` | `10` | Non-negative integer. |
+| `points_per_super_pacgum` | `50` | Non-negative integer. |
+| `points_per_ghost` | `200` | Non-negative integer. |
+| `seed` | `42` | Integer used only for the reproducible first level. |
+| `level_max_time` | `90` | Integer of at least 15 seconds. |
+| `evaluator_mode` | `false` | JSON boolean. |
 
-Evaluator runs are never saved: the Game Over and Victory screens show
-`EVALUATOR RUN` / `SCORE NOT SAVED` and Enter returns to the main menu. Test
-highscore saving with evaluator mode off.
-
-### Reviewer walkthrough
-
-With evaluator mode enabled:
-
-1. **Freeze and Pause**: press `F` (ghosts and `TIME` stop, Pac-Man moves),
-   `Escape` then Resume (still frozen), `F` again (time continues).
-2. **Ghost selection and movement**: while frozen, press `G` to cycle through
-   all four ghosts and use `I`/`J`/`K`/`L` to place the selected ghost.
-3. **Power pellet, frightened and eaten ghosts**: freeze, eat a super-pacgum
-   (ghosts stay frightened while frozen), place a ghost on Pac-Man to eat it,
-   unfreeze and watch it return home.
-4. **Death and Game Over**: freeze and place a non-frightened ghost on Pac-Man;
-   the respawn waits until unfreeze. Repeat until no lives remain.
-5. **Level and final victory**: press `C` on each level; `C` on level 10 shows
-   the Victory screen.
-6. **Timeout**: set `level_max_time` to its minimum of `15` in the evaluator
-   configuration and wait.
-
-With evaluator mode disabled:
-
-7. **Highscore save**: lose all lives, enter a name, and check the Highscores
-   menu.
-
-## Gameplay progression and controls
-
-- Use either the arrow keys or W/A/S/D to move Pac-Man in the four required
-  directions. Both schemes set the same queued direction, so pressing their
-  matching keys together never doubles movement.
-- Press `Escape` during a level to pause. Resume continues the same session;
-  Return to Menu asks for confirmation before discarding it. The next game
-  starts with level 1, score 0, and the configured lives.
-- The level timer, power-pellet, player respawn/invincibility, and ghost state
-  timers all use simulation time and do not advance while paused.
-- A lethal collision also pauses only the level countdown until the player
-  respawns; death animation and respawn processing continue normally. During
-  that transition Pac-Man cannot collect items, ghosts are frozen, and any
-  ghost within five tiles of the respawn is moved to a free distant corner.
-- Reaching the time limit ends the current game in Game Over. Timeout takes
-  priority over same-frame gameplay actions.
-- Completing a level keeps score and remaining lives. Completing the tenth
-  configured level wins the game.
-
-## Ghost behavior
-
-- Blinky targets Pac-Man directly; Pinky targets four tiles ahead; Inky uses
-  the doubled vector from Blinky to two tiles ahead; Clyde chases when far and
-  targets home within eight tiles.
-- Chase and Scatter greedily approach their target without reversing at an
-  ordinary intersection. Reversal is explicit when Scatter/Chase changes,
-  Frightened starts, or a dead end leaves no other legal exit.
-- Frightened ghosts choose a legal next tile that maximizes squared distance
-  from Pac-Man; their injected RNG breaks only equal-distance ties.
-- Eaten ghosts remain visible as returning eyes and use a shortest
-  wall-respecting path at twice normal speed. If their home is unsafe when they
-  arrive, the eyes continue visibly to a distant corner; the ghost respawns
-  exactly there and resumes Scatter, with no additional delay or teleport.
-- Scatter lasts 7 seconds, Chase lasts 20 seconds, and Frightened lasts for the
-  player's power-up window. Pause and Evaluator Freeze stop those simulation
-  timers without a jump when play resumes.
+Missing, unreadable or malformed configuration files recover to safe defaults.
+Each missing or invalid field is recovered independently, and a clear warning
+identifies the field and applied default or clamp. Python's standard `logging`
+module is used; no logging dependency is required.
 
 The delivered `config.json` contains ten 15x15–18x18 levels. The 18x18 cap
-avoids a known hang in the assigned maze generator at larger sizes. Level 1
-uses the configured seed; later levels use isolated random seeds.
+avoids a measured hang in the assigned generator at larger sizes.
 
-## Highscores
+## Highscore
 
-After a win or loss, enter a name of 1–10 ASCII letters, numbers, or spaces
-under `INSERT NAME`, then press Enter to submit. The game stores a deterministic
-Top 10 sorted by descending score then name. Missing or corrupt score files
-recover to an empty board.
+The Main Menu provides a **View Highscores** action which opens the centered
+`HALL OF FAME` view and displays up to ten player names and scores. This
+satisfies the subject's Main Menu requirement without crowding the menu itself.
 
-`highscore_filename` is used exactly as configured. The delivered configuration
-stores scores in `scores/high_scores.json`; each submitted name replaces that
-name's prior entry before the board is sorted. Writes use a temporary file
-followed by replacement, so a failed save preserves the prior board.
+After Victory or Game Over, the player enters a name containing 1–10 ASCII
+letters, numbers or spaces. Scores must be non-negative integers. The board is
+sorted by descending score and deterministic name order; submitting the same
+name replaces its previous entry.
 
-## A-Maze-ing package
+JSON was chosen because it matches the project configuration format, is
+human-readable and needs only the Python standard library. Writes are atomic:
+the new board is written to a temporary file and then replaces the old file.
+A failed save preserves the previous data. A missing file starts an empty
+board; malformed JSON or an invalid top-level highscore structure logs a clear
+warning and also recovers to an empty board without crashing.
 
-The assigned external maze-generator artifact is tracked unchanged as
-`mazegenerator-2.0.1-py3-none-any.whl` (version 2.0.1). Its SHA-256 checksum is
-`f4b6828cd367570973bf901d90bbd6e5ae5cd4eb6d9cff18b1daa7b5c03599c3`.
+## Maze Generation
 
-Maze generation is wrapped by `src/game_logic/maze.py`, which calls the package
-with `perfect=False`, validates generated grids before gameplay, and keeps the
-first level on the configured fixed seed. Later levels receive random seeds from
-an isolated level-seed RNG; pacgum placement and frightened ghost choices also
-use injected RNG sources instead of sharing module-global randomness.
+The assigned external artifact is tracked unchanged as
+`mazegenerator-2.0.1-py3-none-any.whl`. Its SHA-256 checksum is:
 
-## Project management
+```text
+f4b6828cd367570973bf901d90bbd6e5ae5cd4eb6d9cff18b1daa7b5c03599c3
+```
 
-- Frontend library decision (Pygame vs. MLX-equivalence audit):
-  [`project-management/decisions/ADR-0001-pygame-vs-mlx-frontend.md`](project-management/decisions/ADR-0001-pygame-vs-mlx-frontend.md),
-  backed by the full call-by-call matrix in
-  [`project-management/audits/pygame-mlx-api-matrix.md`](project-management/audits/pygame-mlx-api-matrix.md).
-  Decision: keep Pygame, but every call with no MLX equivalent is replaced by a small tested
-  helper that assumes only MLX-shaped capabilities. Implemented in `src/ui/gfx/` (image scaling,
-  alpha compositing, a hand-baked pixel font replacing TrueType text) and
-  `src/game_logic/clock.py` (a `time.monotonic()` project clock replacing `pygame.time.Clock`
-  and `pygame.time.get_ticks()`, including in `Player`, which previously read the wall clock
-  directly from domain code). Audio is a separate non-graphics subsystem: `pygame.mixer` is kept
-  behind `src/ui/music_manager.py` when available, and gracefully falls back to silent no-op
-  behavior with one warning when mixer initialization or playback fails.
+`src/game_logic/maze.py` is the only adapter to the package. It invokes
+`MazeGenerator` with `perfect=False`, validates dimensions and cell values,
+and converts import/generation/placement failures into a clear
+`MazeGenerationError`.
+
+Level 1 uses the configured fixed seed. Later levels receive random seeds from
+an isolated RNG. Pacgum placement and frightened-ghost tie breaking also use
+injected RNG instances, avoiding coupling to the generator's global random
+state. Spawn, ghosts and both collectible types are placed only in reachable,
+walkable cells.
+
+## Implementation
+
+- Pac-Man moves with queued four-direction input and tile interpolation.
+- Pacgums, super-pacgums and edible ghosts award configurable points.
+- Blinky targets Pac-Man; Pinky targets four tiles ahead; Inky uses Blinky and
+  a two-tile pivot; Clyde chases while distant and targets home when close.
+- Scatter and Chase use the existing greedy target rule. Frightened chooses a
+  legal move maximizing squared distance from Pac-Man; RNG only breaks ties.
+- Dead ghosts remain visible as eyes, travel at twice normal speed and use BFS
+  to reach home. If home is unsafe, the eyes continue visibly to a safe corner
+  and the ghost respawns exactly where they arrive.
+- Scatter lasts 7 seconds and Chase 20 seconds. Frightened follows Pac-Man's
+  power-up window. Pause and Evaluator Freeze use simulation time and resume
+  without jumps.
+- Missing or corrupt images render a visible placeholder. Audio initialization,
+  loading or playback failures warn once and degrade to silence.
+
+## General Software Architecture
+
+- `pac-man.py`: command-line adapter and application entry point.
+- `src/game_logic/config.py`: commented JSON parsing, validation and recovery.
+- `src/game_logic/maze.py`: A-Maze-ing adapter, validation and placement.
+- `src/game_logic/entities/`: player, ghost, item and collision rules.
+- `src/game_logic/game_engine.py`: application state machine and level loop.
+- `src/game_logic/evaluator.py`: reviewer-only state and commands.
+- `src/game_logic/clock.py`: monotonic simulation clock independent of Pygame.
+- `src/scores/`: validated score model and atomic JSON persistence.
+- `src/ui/screens/`: menus, Pause and score-entry screens.
+- `src/ui/gameplay/`: maze, entity and HUD rendering.
+- `src/ui/gfx/`: bitmap text, nearest-neighbor scaling and alpha compositing.
+- `src/ui/music_manager.py`: optional Pygame mixer adapter with silent fallback.
+
+The project keeps rules and persistence testable without opening a display.
+Pygame remains at input/render/audio boundaries. The frontend decision and
+function-by-function MLX-equivalence audit are recorded in project management.
+
+## Development
+
+| Command | Purpose |
+|---|---|
+| `make install` | Synchronize the uv environment. |
+| `make run` | Launch with `CONFIG`, defaulting to `config.json`. |
+| `make debug` | Start under Python's built-in `pdb`. |
+| `make clean` | Remove Python and analysis caches. |
+| `make lint` | Run flake8 and mypy with the subject's mandatory flags. |
+| `make test` | Run the unittest suite. |
+
+Every production class and function has a purpose docstring, and public
+boundaries use type hints. Behavior changes are protected with focused tests
+before the full quality gates.
+
+## Project Management
+
+The recovery roadmap is tracked through GitHub issues, reviewed pull requests,
+a milestone and Project 11. The repository currently contains the accepted
+frontend decision and its complete API audit:
+
+- [ADR-0001: Pygame vs. MLX frontend](project-management/decisions/ADR-0001-pygame-vs-mlx-frontend.md)
+- [Pygame/MLX API matrix](project-management/audits/pygame-mlx-api-matrix.md)
+
+Timeline, progress comparison, team organization, risks, blockers and the final
+acceptance plan will be completed in `project-management/` after the team agrees
+on its evidence strategy. This pending documentation is tracked by issue #11;
+it is intentionally not fabricated in advance.
 
 ## Resources
 
-- https://programmingpixels.com/handling-a-title-screen-game-flow-and-buttons-in-pygame.html
-- https://thepythoncode.com/code/creating-pacman-game-with-python
-- https://github.com/x4nth055/pythoncode-tutorials/tree/master/gui-programming/pacman-game
-- https://www.pygame.org/docs/tut/newbieguide.html
+### Technical references
 
-### Sounds
+- [Python documentation](https://docs.python.org/3/)
+- [Pygame documentation](https://www.pygame.org/docs/)
+- [uv documentation](https://docs.astral.sh/uv/)
+- [MiniLibX prototypes](https://harm-smits.github.io/42docs/libs/minilibx/prototypes.html)
+- [Handling a title screen, game flow and buttons](https://programmingpixels.com/handling-a-title-screen-game-flow-and-buttons-in-pygame.html)
+- [Python Pac-Man tutorial](https://thepythoncode.com/code/creating-pacman-game-with-python)
+- [Pac-Man tutorial source](https://github.com/x4nth055/pythoncode-tutorials/tree/master/gui-programming/pacman-game)
 
-- https://downloads.khinsider.com/game-soundtracks/album/pac-man-game-sound-effects
+### Assets
 
-Note: the bundled gameplay music at `src/ui/sounds/game.mp3` was refreshed on
-`main` before the scoring/collision PR branch was fast-forwarded.
+- Pac-Man sound references: [KHInsider Pac-Man sound effects](https://downloads.khinsider.com/game-soundtracks/album/pac-man-game-sound-effects).
+- The assigned A-Maze-ing wheel was provided by another student group and is
+  used byte-for-byte without modification.
+
+Final asset source/license attribution will be verified alongside packaging
+before publication; unverified provenance will not be invented.
+
+### Use of AI
+
+AI tools were used to support repository auditing, requirement extraction,
+implementation planning, test design, code review, documentation structure and
+small code changes. Generated suggestions were not accepted as evidence on
+their own: behavior was checked against Pac-Man subject v1.5, reviewed through
+Git diffs and pull requests, and exercised with targeted tests, the complete
+suite, flake8, mypy, configuration smokes and manual graphical checks.
+
+The students remain responsible for understanding, explaining and modifying
+all submitted code during peer review.

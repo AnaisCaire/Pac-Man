@@ -1,5 +1,5 @@
 import pygame
-from .bottons import UIElement
+from .buttons import UIElement
 from ..gfx import raster
 
 import pathlib
@@ -21,8 +21,8 @@ class MainMenu:
         "Exit":            "quit",
     }
 
-    def __init__(self, screen_width: int, screen_height: int):
-
+    def __init__(self, screen_width: int, screen_height: int) -> None:
+        """Load the logo and center every main-menu action."""
         # load / scale  logo to fit
         raw_logo = raster.load_rgba(str(_IMAGES_DIR / "main_screen_logo.png"))
         logo_scale = min(LOGO_MAX_WIDTH / raw_logo.shape[0], 1.0)
@@ -54,10 +54,12 @@ class MainMenu:
         return None
 
     def update(self, mouse_pos: tuple[int, int]) -> None:
+        """Update every button hover state."""
         for button in self.buttons:
             button.update(mouse_pos)
 
     def draw(self, surface: pygame.Surface) -> None:
+        """Draw the menu background, logo, and buttons."""
         surface.fill(BG_COLOR)
         raster.blit_to_surface(surface, self.logo, self.logo_rect.topleft)
         for button in self.buttons:

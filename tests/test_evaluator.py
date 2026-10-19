@@ -11,7 +11,7 @@ from src.game_logic.clock import ProjectClock
 from src.game_logic.config import Config
 from src.game_logic.entities.ghosts import Ghost
 from src.game_logic.entities.items import Pacgum, SuperPacgum
-from src.game_logic.entities.player import Player
+from src.game_logic.entities.player import Player, resolve_collisions
 from src.game_logic.evaluator import EvaluatorMode
 from src.game_logic.game_engine import (
     GameState,
@@ -355,11 +355,71 @@ class EvaluatorInputTests(unittest.TestCase):
         self.assertEqual(evaluator.selected_ghost, 0)
         self.assertIn("SELECTED BLINKY", evaluator.hud_lines)
 
-        for expected_name in ("PINKY", "INKY", "CLYDE", "BLINKY"):
+        for expected_name in ("PINKY", "INKY", "CLYDE"):
             handle_evaluator_input(
                 evaluator, [_key(pygame.K_g)], 1000, pacgums,
                 super_pacgums, ghosts, maze)
             self.assertIn(f"SELECTED {expected_name}", evaluator.hud_lines)
+
+        handle_evaluator_input(
+            evaluator, [_key(pygame.K_g)], 1000, pacgums,
+            super_pacgums, ghosts, maze)
+        self.assertIsNone(evaluator.selected_ghost)
+        self.assertNotIn("SELECTED", " ".join(evaluator.hud_lines))
+
+    def test_i_toggles_invincibility_when_no_ghost_is_selected(self) -> None:
+        """Released ghost controls reuse I as a visible invincibility toggle."""
+        evaluator = EvaluatorMode(enabled=True)
+        pacgums, super_pacgums = _level_items()
+        ghosts, maze = _ghost_controls()
+
+        handle_evaluator_input(
+            evaluator, [_key(pygame.K_f), _key(pygame.K_i)], 1000,
+            pacgums, super_pacgums, ghosts, maze)
+
+        self.assertTrue(evaluator.invincible)
+        self.assertIn("INVINCIBLE", evaluator.hud_lines)
+
+        handle_evaluator_input(
+            evaluator, [_key(pygame.K_i)], 1000,
+            pacgums, super_pacgums, ghosts, maze)
+        self.assertFalse(evaluator.invincible)
+
+    def test_i_moves_selected_ghost_instead_of_toggling_invincibility(self) -> None:
+        """I keeps its movement meaning while a ghost is selected."""
+        evaluator = EvaluatorMode(enabled=True)
+        pacgums, super_pacgums = _level_items()
+        ghosts, maze = _ghost_controls()
+
+        handle_evaluator_input(
+            evaluator,
+            [_key(pygame.K_f), _key(pygame.K_g), _key(pygame.K_i)],
+            1000,
+            pacgums,
+            super_pacgums,
+            ghosts,
+            maze,
+        )
+
+        self.assertEqual((ghosts[0].grid_x, ghosts[0].grid_y), (2, 1))
+        self.assertFalse(evaluator.invincible)
+
+    def test_invincibility_blocks_lethal_ghosts_but_not_edible_ghosts(self) -> None:
+        """The aid prevents death without disabling frightened-ghost scoring."""
+        evaluator = EvaluatorMode(enabled=True, invincible=True)
+        player = Player(1, 1, 16, Config(points_per_ghost=25))
+        lethal = Ghost(1, 1, 16, player, 0)
+
+        resolve_collisions(
+            player, {}, {}, [lethal], 0, invincible=evaluator.invincible
+        )
+        self.assertFalse(player.is_dying)
+
+        lethal.frighten(0, reverse=False)
+        resolve_collisions(
+            player, {}, {}, [lethal], 0, invincible=evaluator.invincible
+        )
+        self.assertEqual(player.score, 25)
 
     def test_ijkl_moves_selected_ghost_only_to_walkable_tiles(self) -> None:
         """Manual movement normalizes position and stops outside Freeze."""

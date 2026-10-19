@@ -16,6 +16,7 @@ class Pinky(Ghost):
     sprite = 'pink'
 
     def _get_chase_target(self) -> tuple[int, int]:
+        """Return the tile four steps ahead of Pac-Man."""
         dx, dy = self.player.current_direction
         # aim 4 tiles ahead of where Pac-Man is facing
         target_x = self.player.grid_x + dx * 4
@@ -42,6 +43,7 @@ class Inky(Ghost):
         start_time: int,
         rng: random.Random | None = None,
     ) -> None:
+        """Initialize Inky and leave its Blinky reference unset."""
         super().__init__(
             start_grid_x,
             start_grid_y,
@@ -54,6 +56,7 @@ class Inky(Ghost):
         self.blinky: Ghost | None = None
 
     def _get_chase_target(self) -> tuple[int, int]:
+        """Return Inky's doubled Blinky-to-Pac-Man pivot target."""
         # fall back to direct chase if Blinky reference is not set
         if self.blinky is None:
             return (self.player.grid_x, self.player.grid_y)
@@ -76,6 +79,7 @@ class Clyde(Ghost):
     sprite = 'yellow'
 
     def _get_chase_target(self) -> tuple[int, int]:
+        """Chase while distant and target home within eight tiles."""
         dx = self.player.grid_x - self.grid_x
         dy = self.player.grid_y - self.grid_y
         squared_distance = dx * dx + dy * dy

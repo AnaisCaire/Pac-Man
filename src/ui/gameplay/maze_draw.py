@@ -9,6 +9,7 @@ SUPERPACGUM_COLOR = (255, 102, 102)
 
 def draw_maze(surface: pygame.Surface, maze: Maze, tile_size: int,
               offset_x: int = 0, offset_y: int = 0) -> None:
+    """Draw maze cells and directional walls at the configured offset."""
     for y in range(len(maze.grid)):
         for x in range(len(maze.grid[y])):
             px = offset_x + x * tile_size

@@ -137,6 +137,49 @@ class ConfigParsingTests(unittest.TestCase):
         self.assertEqual(len(config.level), 10)
         self.assertGreaterEqual(len(logs.output), 9)
 
+    def test_highscore_filename_must_name_a_json_file(self) -> None:
+        """Any filename is valid when its extension identifies JSON storage."""
+        defaults = Config()
+
+        with self.assertLogs("src.game_logic.config", level="WARNING") as logs:
+            missing_extension = self.parse_text(json.dumps({
+                "highscore_filename": "scores/arcade-scores",
+            }))
+        with self.assertLogs("src.game_logic.config", level="WARNING"):
+            uppercase_extension = self.parse_text(json.dumps({
+                "highscore_filename": "custom/Hall Of Fame.JSON",
+            }))
+
+        self.assertEqual(
+            missing_extension.highscore_filename,
+            defaults.highscore_filename,
+        )
+        self.assertEqual(
+            uppercase_extension.highscore_filename,
+            "custom/Hall Of Fame.JSON",
+        )
+        self.assertTrue(any(
+            "must end with .json" in message for message in logs.output
+        ))
+
+    def test_missing_fields_use_defaults_and_log_each_recovery(self) -> None:
+        """Missing values remain playable and explain every applied default."""
+        defaults = Config()
+
+        with self.assertLogs("src.game_logic.config", level="WARNING") as logs:
+            config = self.parse_text(json.dumps({"lives": 5}))
+
+        self.assertEqual(config.lives, 5)
+        self.assertEqual(config.highscore_filename, defaults.highscore_filename)
+        self.assertEqual(config.level, defaults.level)
+        self.assertTrue(any(
+            "highscore_filename: missing; using" in message
+            for message in logs.output
+        ))
+        self.assertTrue(any(
+            "level: missing; using" in message for message in logs.output
+        ))
+
     def test_malformed_json_root_and_missing_file_use_defaults(self) -> None:
         """Unreadable or structurally invalid config files recover cleanly."""
         defaults = Config()

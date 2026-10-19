@@ -41,6 +41,7 @@ class Ghost(Entity):
                  player: Player,
                  start_time: int,
                  rng: random.Random | None = None) -> None:
+        """Initialize one ghost at home with its player, timer, and RNG."""
         super().__init__(start_grid_x, start_grid_y, tile_size)
         self.speed: float = GHOST_SPEED
         self.home_x: int = start_grid_x
