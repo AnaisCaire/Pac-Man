@@ -229,9 +229,10 @@ bundle and archive under `dist/`:
 PyInstaller does not cross-compile, so each artifact must be generated on its
 target operating system. The executable launches with the editable
 `config.json` beside it; command-line users may still supply another JSON path.
-`PACKAGE-INSTRUCTIONS.txt` is included at the package root. Build directories
-and archives remain ignored; release evidence records their hashes and smoke
-results in `project-management/package-evidence.md`.
+`PACKAGE-INSTRUCTIONS.txt` is included at the package root.
+
+Build directories and archives remain ignored. Build and smoke-test evidence
+is recorded in [PR #32](https://github.com/AnaisCaire/Pac-Man/pull/32).
 
 The released game is available free on Itch.io with Windows and Linux builds:
 
@@ -239,23 +240,34 @@ https://as3di0.itch.io/pac-man
 
 ## Project Management
 
-The recovery roadmap is tracked through GitHub issues, reviewed pull requests,
-a milestone and Project 11. Versioned evidence is indexed in the
-[project-management directory](project-management/README.md), including:
+Project delivery was tracked through GitHub issues, pull requests and
+[Project 11](https://github.com/users/mario-asenjo/projects/11).
 
-- [retrospective timeline and Gantt](project-management/timeline.md);
-- [planned work versus actual delivery](project-management/progress.md);
-- [risk register](project-management/risks.md);
-- [acceptance test plan](project-management/acceptance-test-plan.md);
-- [package and regeneration evidence](project-management/package-evidence.md);
-- [ADR-0001: Pygame vs. MLX frontend](project-management/decisions/ADR-0001-pygame-vs-mlx-frontend.md);
-- [Pygame/MLX API matrix](project-management/audits/pygame-mlx-api-matrix.md).
+The final project management materials are provided in two complementary formats:
 
-Completed dates and status are reconstructed from GitHub records. Team roles
-and decision-process evidence remain pending confirmation from both
-contributors. Packaging and deployment were completed through PR #32 and the
-Itch.io release linked above; the remaining project-management narrative will
-be completed manually by the team in #11.
+- [Project Management Visual Report (PDF)](project-management/PacMan_Gestion_Visual.pdf): project phases, team contributions, decisions, risks and acceptance evidence.
+- [Editable Gantt and Management Overview (Excel)](project-management/PacMan_Gantt_Gestion.xlsx): retrospective timeline, individual contributions, project milestones and delivery tracking.
+
+The timeline covers the full development history, from Anaïs's initial work
+in May 2026 to the final collaborative delivery in October 2026.
+
+The project initially developed through direct commits before adopting a
+structured workflow based on GitHub issues, pull requests and reviewable
+implementation iterations in August 2026.
+
+Contributions and dates are reconstructed from Git history. Commit and pull
+request authorship provide traceability, but are not used as a direct measure
+of individual effort or exclusive responsibility.
+
+Supporting technical evidence is available through the repository's
+[issues](https://github.com/AnaisCaire/Pac-Man/issues) and
+[pull requests](https://github.com/AnaisCaire/Pac-Man/pulls), including
+[packaging and regeneration (PR #32)](https://github.com/AnaisCaire/Pac-Man/pull/32)
+and [release publication (PR #33)](https://github.com/AnaisCaire/Pac-Man/pull/33).
+
+The [Pygame/MLX architecture decision](project-management/decisions/ADR-0001-pygame-vs-mlx-frontend.md)
+and [API equivalence audit](project-management/audits/pygame-mlx-api-matrix.md)
+remain available in the repository.
 
 ## Resources
 
