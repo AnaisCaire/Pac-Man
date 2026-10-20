@@ -5,9 +5,13 @@ from __future__ import annotations
 import tempfile
 import unittest
 import json
+import os
 from pathlib import Path
+import sys
+from unittest.mock import patch
 
 from src.scores.model import ScoreEntry
+from src.scores import scores_utils
 from src.scores.scores_utils import (
     load_highscores,
     rank_scores,
@@ -88,6 +92,36 @@ class HighscoreTests(unittest.TestCase):
         self.assertEqual(
             resolve_highscore_path("../escaped.json"),
             Path("../escaped.json"),
+        )
+
+    def test_packaged_relative_path_uses_writable_windows_data(self) -> None:
+        """A Windows bundle never writes highscores inside its install folder."""
+        with (
+            tempfile.TemporaryDirectory() as directory,
+            patch.object(sys, "frozen", True, create=True),
+            patch.object(scores_utils.sys, "platform", "win32"),
+            patch.dict(os.environ, {"APPDATA": directory}),
+        ):
+            path = resolve_highscore_path("scores/high_scores.json")
+
+        self.assertEqual(
+            path,
+            Path(directory) / "Pac-Man" / "scores" / "high_scores.json",
+        )
+
+    def test_packaged_relative_path_uses_writable_linux_data(self) -> None:
+        """A Linux bundle follows XDG data storage when it is configured."""
+        with (
+            tempfile.TemporaryDirectory() as directory,
+            patch.object(sys, "frozen", True, create=True),
+            patch.object(scores_utils.sys, "platform", "linux"),
+            patch.dict(os.environ, {"XDG_DATA_HOME": directory}),
+        ):
+            path = resolve_highscore_path("scores/high_scores.json")
+
+        self.assertEqual(
+            path,
+            Path(directory) / "pacman" / "scores" / "high_scores.json",
         )
 
     def test_load_preserves_file_order_and_update_replaces_same_name(self) -> None:

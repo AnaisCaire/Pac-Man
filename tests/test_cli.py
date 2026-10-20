@@ -83,6 +83,24 @@ class CommandLineTests(unittest.TestCase):
         parse_config.assert_called_once_with("custom.json")
         game_loop.assert_called_once_with(configuration)
 
+    def test_packaged_launch_without_arguments_uses_bundled_config(self) -> None:
+        """A frozen public build starts normally when launched by double-click."""
+        namespace = runpy.run_path(str(ENTRY_POINT), run_name="pacman_cli")
+        main = namespace["main"]
+        configuration = object()
+
+        with (
+            patch.object(sys, "frozen", True, create=True),
+            patch.object(sys, "argv", [str(ENTRY_POINT)]),
+            patch.object(sys, "executable", str(ROOT / "Pac-Man.exe")),
+            patch("src.parse_config", return_value=configuration) as parse_config,
+            patch("src.game_loop") as game_loop,
+        ):
+            main()
+
+        parse_config.assert_called_once_with(str(ROOT / "config.json"))
+        game_loop.assert_called_once_with(configuration)
+
 
 if __name__ == "__main__":
     unittest.main()

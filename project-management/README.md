@@ -10,6 +10,7 @@ primary records; these files summarize them without replacing or rewriting them.
 - [Planned work versus actual delivery](progress.md)
 - [Risk register](risks.md)
 - [Acceptance test plan](acceptance-test-plan.md)
+- [Package and regeneration evidence](package-evidence.md)
 - [ADR-0001: Pygame vs. MLX frontend](decisions/ADR-0001-pygame-vs-mlx-frontend.md)
 - [Pygame/MLX API audit](audits/pygame-mlx-api-matrix.md)
 - [GitHub roadmap epic](https://github.com/AnaisCaire/Pac-Man/issues/1)

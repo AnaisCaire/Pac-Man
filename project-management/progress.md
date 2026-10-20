@@ -17,9 +17,9 @@ Snapshot: 2026-10-19. Statuses come from GitHub Project 11 and issue state.
 | 6 | Ten-level progression and Pause | [Issue #7](https://github.com/AnaisCaire/Pac-Man/issues/7), [PR #24](https://github.com/AnaisCaire/Pac-Man/pull/24) | Done |
 | 7 | Ghost chase/flee/dead/respawn | [Issue #8](https://github.com/AnaisCaire/Pac-Man/issues/8), [PR #28](https://github.com/AnaisCaire/Pac-Man/pull/28), [PR #29](https://github.com/AnaisCaire/Pac-Man/pull/29) | Done |
 | 8 | Reviewer evaluator mode | [Issue #9](https://github.com/AnaisCaire/Pac-Man/issues/9), [PR #26](https://github.com/AnaisCaire/Pac-Man/pull/26), [PR #30](https://github.com/AnaisCaire/Pac-Man/pull/30) | Done |
-| 9 | UI and resource hardening | [Issue #10](https://github.com/AnaisCaire/Pac-Man/issues/10), [PR #30](https://github.com/AnaisCaire/Pac-Man/pull/30) | In progress: packaged resource paths pending |
+| 9 | UI and resource hardening | [Issue #10](https://github.com/AnaisCaire/Pac-Man/issues/10), [PR #30](https://github.com/AnaisCaire/Pac-Man/pull/30) | Ready to close: native package paths/startup verified |
 | 10 | README and management evidence | [Issue #11](https://github.com/AnaisCaire/Pac-Man/issues/11), [PR #30](https://github.com/AnaisCaire/Pac-Man/pull/30), this directory | In progress: team evidence pending |
-| 11 | Package, publish and rehearse | [Issue #12](https://github.com/AnaisCaire/Pac-Man/issues/12) | Todo |
+| 11 | Package, publish and rehearse | [Issue #12](https://github.com/AnaisCaire/Pac-Man/issues/12), `feat/issue-12-package-release` | In progress: native artifacts built; manual flow and Itch.io pending |
 
 ## Material differences from the initial plan
 
@@ -49,7 +49,7 @@ final team-organization document will be written only after `masenjo` and
 
 ## Current delivery state
 
-Functional gameplay and source-level quality gates are complete. Remaining
-mandatory work is management evidence, packaged-resource verification, Windows
-and Linux artifacts, external package smoke, Itch.io publication and final
-acceptance/recode rehearsal.
+Functional gameplay, source gates, native Windows/Linux builds and external
+startup/no-audio smokes are complete. Remaining mandatory work is confirmed
+team-management evidence, manual packaged game/highscore persistence, Itch.io
+publication/download smoke and final acceptance/recode rehearsal.

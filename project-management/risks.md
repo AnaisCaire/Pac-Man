@@ -15,11 +15,11 @@ slice boundaries.
 | Same-frame collision/pause ordering loses lives or score | Low / High | Rule tests in PR #23 and Pause/Freeze regressions in PR #27 | Closed |
 | Highscore/config JSON is malformed | Low / Medium | Defaults/empty board, warnings and atomic writes in PRs #25/#30 | Closed in source |
 | Missing/corrupt images crash screens | Low / High | Shared visible RGBA fallback and screen renders in PR #30 | Closed in source |
-| Resource paths fail in a packaged layout | Medium / High | Build-layout smoke required by #10/#12 | Open |
-| Highscore path is not writable in a packaged install | Medium / High | Define writable data policy and prove persistence/restart in #12 | Open |
+| Resource paths fail in a packaged layout | Low / High | Windows/Linux archives contain all assets and start outside checkout | Closed before publication |
+| Highscore path is not writable in a packaged install | Low / High | Platform user-data policy and Windows/Linux path contracts; manual persistence/restart still required | Mitigated; final smoke pending |
 | Asset provenance is insufficient for public upload | Medium / High | Verify source/license before publishing; never invent attribution | Open |
-| Windows/Linux packages diverge | Medium / Medium | Use one reproducible packaging spec where possible and smoke both outputs | Open |
-| Itch.io build cannot be regenerated during review | Medium / High | Timed clean-clone build rehearsal, artifact hash and documented command in #12 | Open |
+| Windows/Linux packages diverge | Low / Medium | One spec/script built and started native artifacts on both targets | Closed before publication |
+| Itch.io build cannot be regenerated during review | Low / High | Timed clean-clone builds completed; download/published-artifact smoke remains | Mitigated; Itch.io pending |
 | Management evidence overstates inferred team roles | Low / High | Report PR authorship only; wait for both contributors to confirm responsibilities | Controlled; #11 pending |
 
 ## Escalation rule
