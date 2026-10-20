@@ -233,6 +233,10 @@ target operating system. The executable launches with the editable
 and archives remain ignored; release evidence records their hashes and smoke
 results in `project-management/package-evidence.md`.
 
+The released game is available free on Itch.io with Windows and Linux builds:
+
+https://as3di0.itch.io/pac-man
+
 ## Project Management
 
 The recovery roadmap is tracked through GitHub issues, reviewed pull requests,
@@ -249,8 +253,9 @@ a milestone and Project 11. Versioned evidence is indexed in the
 
 Completed dates and status are reconstructed from GitHub records. Team roles
 and decision-process evidence remain pending confirmation from both
-contributors; packaging and deployment rows remain pending until #12 produces
-real Windows/Linux artifacts and a verified Itch.io URL.
+contributors. Packaging and deployment were completed through PR #32 and the
+Itch.io release linked above; the remaining project-management narrative will
+be completed manually by the team in #11.
 
 ## Resources
 

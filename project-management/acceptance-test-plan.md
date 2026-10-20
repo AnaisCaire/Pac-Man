@@ -1,6 +1,6 @@
 # Acceptance test plan
 
-Snapshot: 2026-10-19.
+Snapshot: 2026-10-20.
 
 The subject is accepted in layers. Automated source checks run first; graphical,
 packaged and public-download checks remain manual because a passing unit test
@@ -20,8 +20,9 @@ uv run python -m compileall -q pac-man.py src tests
 ```
 
 Expected: zero flake8/mypy errors, all tests green, lock unchanged and no
-traceback. PR #30 recorded 125 passing tests and 54 mypy-checked source files.
-Rerun rather than reusing that historical count after later changes.
+traceback. PR #32 recorded 130 passing tests and 56 mypy-checked source files on
+both Windows and Linux. Rerun rather than reusing that historical count after
+later changes.
 
 ## 2. Configuration and dependency gate
 
@@ -83,19 +84,21 @@ Verified from a clean clone on Windows and Linux x86_64:
 - sizes, SHA-256 hashes and 26 s/30 s build times are recorded in
   `package-evidence.md`.
 
-Still pending before release:
+The team accepted the packaged gameplay and persistence flow for the published
+release. The automated and external-startup evidence above was independently
+recorded; the manual acceptance is a team confirmation rather than an agent-run
+interactive transcript.
 
-- manually execute menu, gameplay, Pause and evaluator-assisted win/loss;
-- submit a highscore and prove persistence after packaged restart on both OSes.
+## 8. Public-platform and regeneration acceptance
 
-## 8. Public-platform and regeneration acceptance (pending #12)
-
-- Publish the verified build free and unlisted/private on Itch.io or equivalent.
-- Download it from the public-platform URL on a clean environment.
-- Repeat the packaged smoke against the downloaded artifact.
-- Regenerate from a clean clone with the documented root script/spec while
-  timing the operation.
-- Record URL, artifact hash, elapsed build time, failures/fixes and final result.
+- Clean-clone regeneration with the documented root script/spec: passed.
+- Build timing and source-generated archive hashes: recorded in
+  `package-evidence.md`.
+- Free Itch.io page with visible Windows and Linux downloads: verified from the
+  team-supplied screenshot at https://as3di0.itch.io/pac-man.
+- Published game availability and final acceptance: confirmed by the team.
+- Independent download/smoke by the agent: not performed because the release is
+  not accessible to the agent; this limitation is recorded rather than inferred.
 
 ## Exit criteria
 

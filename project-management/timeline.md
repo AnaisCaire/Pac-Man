@@ -1,6 +1,6 @@
 # Retrospective timeline
 
-Snapshot: 2026-10-19.
+Snapshot: 2026-10-20.
 
 This Gantt is reconstructed from real PR creation and merge dates. It is a
 retrospective record, not a claim that these dates were estimated in advance.
@@ -33,22 +33,21 @@ gantt
 
     section UI and evidence
     Evaluator, asset fallback and README (PR 30) :done, p30, 2026-10-18, 2d
+    Project delivery evidence (PR 31) :done, p31, 2026-10-19, 1d
+    Native packaging and regeneration (PR 32) :done, p32, 2026-10-19, 2d
+    Itch.io Windows/Linux release :milestone, itch, 2026-10-20, 0d
 ```
 
 ## Remaining sequence (dates intentionally TBD)
 
 1. Confirm team organization and complete the remaining #11 evidence.
-2. Manually smoke complete gameplay and persisted highscores in both packages.
-3. Publish the verified build free and unlisted/private on Itch.io.
-4. Download from Itch.io and repeat the package smoke.
-5. Record the URL and final published artifact hashes.
-6. Run the final requirement-to-evidence audit and close epic #1.
+2. Run the final requirement-to-evidence audit and close epic #1.
 
-The #12 implementation branch has already generated Windows and Linux packages
-from a clean clone in 26 s and 30 s, verified their contents and started both
-outside the checkout with normal dummy audio and forced audio failure. These
-facts move into the historical Gantt only after their PR is merged.
+PR #32 generated Windows and Linux packages from a clean clone in 26 s and 30 s,
+verified their contents and started both outside the checkout with normal dummy
+audio and forced audio failure. The team then published Windows and Linux
+downloads at https://as3di0.itch.io/pac-man and accepted #12 as complete.
 
-Calendar dates for manual review and publication are deliberately omitted until
-the team has real availability and an Itch.io project. This avoids converting
-guesses into project evidence.
+The remaining #11 date is deliberately omitted until the team confirms its
+manual organization evidence. This avoids converting guesses into project
+evidence.

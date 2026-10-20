@@ -22,8 +22,8 @@ primary records; these files summarize them without replacing or rewriting them.
 - PR authors are reported as GitHub accounts, not inferred team roles.
 - Test results are copied only from verified PR evidence.
 - Pending work stays marked pending until an artifact or deployment exists.
-- The packaging and Itch.io rows will be updated after #12 with the real build
-  command, artifact hash, platform URL and smoke results.
+- Packaging and Itch.io evidence records real build commands, source-generated
+  archive hashes, the platform URL and the limits of the supplied release proof.
 
 ## Intentionally pending team evidence
 

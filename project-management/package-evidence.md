@@ -1,6 +1,6 @@
 # Package and regeneration evidence
 
-Snapshot: 2026-10-19, clean-clone regeneration of commit `17a4a88`.
+Snapshot: 2026-10-20, packaging merged through PR #32 and published by the team.
 
 ## Packaging contract
 
@@ -37,12 +37,26 @@ PyInstaller embed build timestamps.
 - Unit contracts verify frozen no-argument launch and writable Windows/Linux
   highscore path resolution.
 
-## Pending before release
+## Itch.io release evidence
 
-- Manually exercise menu, gameplay, Pause, evaluator win/loss, name entry and
-  highscore persistence/restart in each native bundle.
-- Publish free and unlisted/private on Itch.io, download from the resulting URL
-  and repeat the package smoke.
+- URL: https://as3di0.itch.io/pac-man
+- Visible title: `Pac-Man`.
+- Visible creator: `As3di0`.
+- Classification shown: `Games > Simulation > Free`.
+- Windows download shown as `Pac-Man-Windows-x86_64.exe` (3.2 MB) with a
+  Windows platform icon.
+- Linux download shown as `Pac-Man-Linux-x86_64` (3 MB) with a Linux platform
+  icon.
+- The page exposes install sections for Launch, Controls, Evaluator mode and
+  Highscores.
+- No upload error, quarantine notice or compatibility warning is visible.
 
-These pending rows remain open in issue #12 and must not be replaced with the
-initial branch-build evidence above.
+This page evidence was supplied by the team in a temporary repository-root
+screenshot, inspected on 2026-10-20 and deleted immediately afterward. The
+screenshot does not expose an explicit public/private label, per-file checksum,
+channel name or build version, so none is claimed here. The team confirmed the
+uploaded game is available and accepted packaging/deployment as complete.
+
+The source-generated archive hashes above remain regeneration evidence; they
+must not be presented as checksums for the differently named files displayed by
+Itch.io because the screenshot does not prove byte identity.
