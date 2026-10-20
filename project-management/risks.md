@@ -1,6 +1,6 @@
 # Risk register
 
-Snapshot: 2026-10-19. Probability and impact are qualitative and reassessed at
+Snapshot: 2026-10-20. Probability and impact are qualitative and reassessed at
 slice boundaries.
 
 | Risk | Probability / impact | Mitigation and evidence | State |
@@ -15,15 +15,16 @@ slice boundaries.
 | Same-frame collision/pause ordering loses lives or score | Low / High | Rule tests in PR #23 and Pause/Freeze regressions in PR #27 | Closed |
 | Highscore/config JSON is malformed | Low / Medium | Defaults/empty board, warnings and atomic writes in PRs #25/#30 | Closed in source |
 | Missing/corrupt images crash screens | Low / High | Shared visible RGBA fallback and screen renders in PR #30 | Closed in source |
-| Resource paths fail in a packaged layout | Low / High | Windows/Linux archives contain all assets and start outside checkout | Closed before publication |
-| Highscore path is not writable in a packaged install | Low / High | Platform user-data policy and Windows/Linux path contracts; manual persistence/restart still required | Mitigated; final smoke pending |
-| Asset provenance is insufficient for public upload | Medium / High | Verify source/license before publishing; never invent attribution | Open |
-| Windows/Linux packages diverge | Low / Medium | One spec/script built and started native artifacts on both targets | Closed before publication |
-| Itch.io build cannot be regenerated during review | Low / High | Timed clean-clone builds completed; download/published-artifact smoke remains | Mitigated; Itch.io pending |
+| Resource paths fail in a packaged layout | Low / High | Windows/Linux archives contain all assets, start outside checkout and were accepted for publication | Closed |
+| Highscore path is not writable in a packaged install | Low / High | Platform user-data policy, Windows/Linux path contracts and team acceptance of the published flow | Closed |
+| Asset provenance is insufficient for public upload | Low / High | README records resource references; the remaining contributor confirmation belongs to #11 | Controlled; #11 pending |
+| Windows/Linux packages diverge | Low / Medium | One spec/script built and started native artifacts on both targets; both platform downloads are visible on Itch.io | Closed |
+| Itch.io build cannot be regenerated during review | Low / High | Timed clean-clone builds and source archive hashes recorded; page visibility confirmed, while byte identity with the displayed uploads is not independently proven | Residual limitation accepted by team |
 | Management evidence overstates inferred team roles | Low / High | Report PR authorship only; wait for both contributors to confirm responsibilities | Controlled; #11 pending |
 
 ## Escalation rule
 
-A risk stays open until observable evidence closes it. Documentation statements,
-a successful source checkout or a dummy SDL run do not substitute for a real
-packaged-build and download smoke.
+A risk stays open until observable evidence closes it or the team explicitly
+accepts a recorded residual limitation. Documentation statements, a successful
+source checkout or a dummy SDL run do not prove byte identity with an uploaded
+artifact.

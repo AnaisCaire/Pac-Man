@@ -1,6 +1,6 @@
 # Planned work versus actual delivery
 
-Snapshot: 2026-10-19. Statuses come from GitHub Project 11 and issue state.
+Snapshot: 2026-10-20. Statuses come from GitHub Project 11 and issue state.
 
 ## Roadmap progress
 
@@ -17,9 +17,9 @@ Snapshot: 2026-10-19. Statuses come from GitHub Project 11 and issue state.
 | 6 | Ten-level progression and Pause | [Issue #7](https://github.com/AnaisCaire/Pac-Man/issues/7), [PR #24](https://github.com/AnaisCaire/Pac-Man/pull/24) | Done |
 | 7 | Ghost chase/flee/dead/respawn | [Issue #8](https://github.com/AnaisCaire/Pac-Man/issues/8), [PR #28](https://github.com/AnaisCaire/Pac-Man/pull/28), [PR #29](https://github.com/AnaisCaire/Pac-Man/pull/29) | Done |
 | 8 | Reviewer evaluator mode | [Issue #9](https://github.com/AnaisCaire/Pac-Man/issues/9), [PR #26](https://github.com/AnaisCaire/Pac-Man/pull/26), [PR #30](https://github.com/AnaisCaire/Pac-Man/pull/30) | Done |
-| 9 | UI and resource hardening | [Issue #10](https://github.com/AnaisCaire/Pac-Man/issues/10), [PR #30](https://github.com/AnaisCaire/Pac-Man/pull/30) | Ready to close: native package paths/startup verified |
+| 9 | UI and resource hardening | [Issue #10](https://github.com/AnaisCaire/Pac-Man/issues/10), [PR #30](https://github.com/AnaisCaire/Pac-Man/pull/30), [PR #32](https://github.com/AnaisCaire/Pac-Man/pull/32) | Done |
 | 10 | README and management evidence | [Issue #11](https://github.com/AnaisCaire/Pac-Man/issues/11), [PR #30](https://github.com/AnaisCaire/Pac-Man/pull/30), this directory | In progress: team evidence pending |
-| 11 | Package, publish and rehearse | [Issue #12](https://github.com/AnaisCaire/Pac-Man/issues/12), `feat/issue-12-package-release` | In progress: native artifacts built; manual flow and Itch.io pending |
+| 11 | Package, publish and rehearse | [Issue #12](https://github.com/AnaisCaire/Pac-Man/issues/12), [PR #32](https://github.com/AnaisCaire/Pac-Man/pull/32), [Itch.io release](https://as3di0.itch.io/pac-man) | Done (team accepted) |
 
 ## Material differences from the initial plan
 
@@ -40,7 +40,7 @@ Snapshot: 2026-10-19. Statuses come from GitHub Project 11 and issue state.
 GitHub records the following PR-opening accounts for this delivery history:
 
 - `AnaisCaire`: PRs #17, #26 and #27.
-- `mario-asenjo`: PRs #13, #14, #18, #19, #21–#25 and #28–#30.
+- `mario-asenjo`: PRs #13, #14, #18, #19, #21–#25 and #28–#32.
 
 This is traceability, not a workload or responsibility claim. Branch commits,
 pair work, review, testing and decisions may involve both contributors. The
@@ -49,7 +49,7 @@ final team-organization document will be written only after `masenjo` and
 
 ## Current delivery state
 
-Functional gameplay, source gates, native Windows/Linux builds and external
-startup/no-audio smokes are complete. Remaining mandatory work is confirmed
-team-management evidence, manual packaged game/highscore persistence, Itch.io
-publication/download smoke and final acceptance/recode rehearsal.
+Functional gameplay, source gates, native Windows/Linux builds, regeneration,
+external startup/no-audio smokes and team-confirmed Itch.io publication are
+complete. Remaining work is the manually authored team-management evidence in
+#11 followed by final epic acceptance/recode review.
