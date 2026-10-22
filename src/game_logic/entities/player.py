@@ -31,6 +31,9 @@ class Player(Entity):
         self.speed: float = PLAYER_SPEED
         self.next_direction: Tuple[int, int] = (0, 0)
         self.moving: bool = False
+        # eye movement for UI
+        self.facing: Tuple[int, int] = (1, 0)
+        self.facing_x: int = 1
 
         # remember spawn so we can reset position on respawn
         self.spawn_x: int = start_grid_x
@@ -80,6 +83,12 @@ class Player(Entity):
             if self._can_move(maze, self.next_direction):
                 self.current_direction = self.next_direction
                 self.moving = True
+
+        # remember where we face; (0, 0) means stopped, so keep the old one
+        if self.current_direction != (0, 0):
+            self.facing = self.current_direction
+        if self.current_direction[0] != 0:
+            self.facing_x = self.current_direction[0]
 
     def update_timers(self, current_time: int) -> None:
         """Check if any active timers have expired.
@@ -139,6 +148,8 @@ class Player(Entity):
         self.moving = False
         self.current_direction = (0, 0)
         self.next_direction = (0, 0)
+        self.facing = (1, 0)
+        self.facing_x = 1
         self.is_dying = False
         self.death_progress = 0.0
         self.is_alive = True
