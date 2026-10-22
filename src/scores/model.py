@@ -20,7 +20,9 @@ class ScoreEntry:
         if not normalized.isascii() or not all(
             character.isalnum() or character == " " for character in normalized
         ):
-            raise ValueError("name must contain only letters, numbers, and spaces")
+            raise ValueError(
+                "name must contain only letters, numbers, and spaces"
+            )
         if type(self.score) is not int or self.score < 0:
             raise ValueError("score must be a non-negative integer")
         object.__setattr__(self, "name", normalized)

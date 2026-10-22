@@ -43,7 +43,9 @@ class CommandLineTests(unittest.TestCase):
         self.assertNotIn("pygame-ce", result.stdout)
         self.assertNotIn("Traceback", result.stderr)
 
-    def test_missing_configuration_argument_is_a_clean_usage_error(self) -> None:
+    def test_missing_configuration_argument_is_a_clean_usage_error(
+        self,
+    ) -> None:
         """No argument must fail clearly without a Python traceback."""
         result = self.run_cli()
 
@@ -67,7 +69,9 @@ class CommandLineTests(unittest.TestCase):
         self.assertIn("configuration file must end with .json", result.stderr)
         self.assertNotIn("Traceback", result.stderr)
 
-    def test_valid_argument_starts_the_game_with_parsed_configuration(self) -> None:
+    def test_valid_argument_starts_the_game_with_parsed_configuration(
+        self,
+    ) -> None:
         """A valid positional path is passed through to the game loop."""
         namespace = runpy.run_path(str(ENTRY_POINT), run_name="pacman_cli")
         main = namespace["main"]
@@ -75,7 +79,9 @@ class CommandLineTests(unittest.TestCase):
 
         with (
             patch.dict(os.environ, {"PYGAME_HIDE_SUPPORT_PROMPT": "1"}),
-            patch("src.parse_config", return_value=configuration) as parse_config,
+            patch(
+                "src.parse_config", return_value=configuration
+            ) as parse_config,
             patch("src.game_loop") as game_loop,
         ):
             main(["custom.json"])
@@ -83,8 +89,12 @@ class CommandLineTests(unittest.TestCase):
         parse_config.assert_called_once_with("custom.json")
         game_loop.assert_called_once_with(configuration)
 
-    def test_packaged_launch_without_arguments_uses_bundled_config(self) -> None:
-        """A frozen public build starts normally when launched by double-click."""
+    def test_packaged_launch_without_arguments_uses_bundled_config(
+        self,
+    ) -> None:
+        """A frozen public build starts normally when launched by
+        double-click.
+        """
         namespace = runpy.run_path(str(ENTRY_POINT), run_name="pacman_cli")
         main = namespace["main"]
         configuration = object()
@@ -93,7 +103,9 @@ class CommandLineTests(unittest.TestCase):
             patch.object(sys, "frozen", True, create=True),
             patch.object(sys, "argv", [str(ENTRY_POINT)]),
             patch.object(sys, "executable", str(ROOT / "Pac-Man.exe")),
-            patch("src.parse_config", return_value=configuration) as parse_config,
+            patch(
+                "src.parse_config", return_value=configuration
+            ) as parse_config,
             patch("src.game_loop") as game_loop,
         ):
             main()

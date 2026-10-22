@@ -37,7 +37,9 @@ class MusicManager:
 
     @classmethod
     def initialize(cls) -> "MusicManager":
-        """Initialize the mixer when possible, otherwise return silent audio."""
+        """Initialize the mixer when possible, otherwise return silent
+        audio.
+        """
         manager = cls()
         try:
             pygame.mixer.init()

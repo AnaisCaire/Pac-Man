@@ -28,7 +28,8 @@ class GhostState(Enum):
 class Ghost(Entity):
     """
     Base ghost class. Handles movement, state machine, and behavior.
-    Subclasses override _get_chase_target() to implement unique chase behaviour.
+    Subclasses override _get_chase_target() to implement unique chase
+    behaviour.
     """
 
     # image set identifier — subclasses override to pick their sprite
@@ -71,10 +72,13 @@ class Ghost(Entity):
     ) -> bool:
         """Return whether `direction` enters a valid connected maze tile."""
         # guard: current position must be inside the grid
-        if not (0 <= self.grid_x < maze.width and 0 <= self.grid_y < maze.height):
+        if not (
+            0 <= self.grid_x < maze.width and 0 <= self.grid_y < maze.height
+        ):
             return False
 
-        # guard: target cell must also be in bounds and not a logo block (value 15)
+        # guard: target cell must also be in bounds and not a logo block (value
+        # 15)
         target_x = self.grid_x + direction[0]
         target_y = self.grid_y + direction[1]
         if not (0 <= target_x < maze.width and 0 <= target_y < maze.height):
@@ -86,7 +90,10 @@ class Ghost(Entity):
 
     def _can_move(self, maze: Maze, direction: Tuple[int, int]) -> bool:
         """Reject immediate reversal except while frightened."""
-        if self.current_direction != (0, 0) and self.state != GhostState.FRIGHTENED:
+        if (
+            self.current_direction != (0, 0)
+            and self.state != GhostState.FRIGHTENED
+        ):
             opposite_direction = (-self.current_direction[0], -
                                   self.current_direction[1])
             if direction == opposite_direction:
@@ -168,10 +175,15 @@ class Ghost(Entity):
             self.progress = 1.0 - self.progress
 
     def _manage_state_timers(self, current_time: int) -> None:
-        """ Handles the automatic switching between SCATTER, CHASE, and FRIGHTENED. """
+        """Handles the automatic switching between SCATTER, CHASE, and
+        FRIGHTENED.
+        """
 
         if self.state == GhostState.FRIGHTENED:
-            if current_time - self.state_timer >= self.player.power_up_duration:
+            if (
+                current_time - self.state_timer
+                >= self.player.power_up_duration
+            ):
                 self.state = GhostState.CHASE
                 self.state_timer = current_time
             return
@@ -226,7 +238,8 @@ class Ghost(Entity):
         if self.progress >= 1.0:
             self.grid_x += self.current_direction[0]
             self.grid_y += self.current_direction[1]
-            # clamp to grid — prevents out-of-bounds if a wall bit is missing at an edge
+            # clamp to grid — prevents out-of-bounds if a wall bit is missing
+            # at an edge
             self.grid_x = max(0, min(maze.width - 1, self.grid_x))
             self.grid_y = max(0, min(maze.height - 1, self.grid_y))
             self.progress -= 1.0
@@ -271,7 +284,9 @@ class Ghost(Entity):
         self.state_timer = current_time
 
     def _safe_respawn_home(self) -> tuple[int, int]:
-        """Keep the current home when safe, otherwise choose a distant corner."""
+        """Keep the current home when safe, otherwise choose a distant
+        corner.
+        """
         current_home = (self.home_x, self.home_y)
         if (
             abs(self.home_x - self.player.grid_x)

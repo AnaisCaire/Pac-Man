@@ -27,7 +27,8 @@ def draw_player(surface: pygame.Surface, player: Player, tile_size: int,
         return  # fully shrunk — nothing to draw
     center_x, center_y = int(px + tile_size // 2), int(py + tile_size // 2)
 
-    facing_mouth = DIRECTION_ANGLES.get(player.current_direction, 0.0)
+    # use the last real direction so the mouth stays put when stopped
+    facing_mouth = DIRECTION_ANGLES.get(player.facing, 0.0)
     aperture = MAX_MOUTH_ANGLE * \
         math.sin(player.progress * math.pi) if player.moving else 0.0
 
@@ -42,10 +43,9 @@ def draw_player(surface: pygame.Surface, player: Player, tile_size: int,
 
     pygame.draw.polygon(surface, PLAYER_COLOR, points)
 
-    # MABYE FIX EYE????
-    eye_angle = facing_mouth - math.pi / 3
+    eye_lift = math.pi / 3 if player.facing[0] != 0 else math.pi / 6
     eye_dist = radius * 0.55
-    eye_x = int(center_x + eye_dist * math.cos(eye_angle))
-    eye_y = int(center_y + eye_dist * math.sin(eye_angle))
+    eye_x = int(center_x + player.facing_x * eye_dist * math.cos(eye_lift))
+    eye_y = int(center_y - eye_dist * math.sin(eye_lift))
     eye_radius = max(2, radius // 4)
     pygame.draw.circle(surface, (0, 0, 0), (eye_x, eye_y), eye_radius)
