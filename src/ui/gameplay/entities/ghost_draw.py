@@ -27,7 +27,9 @@ def _load_ghost_images() -> None:
             _GHOST_IMAGES[key] = raster.load_rgba(
                 str(_IMAGES_DIR / f"{sprite}_ghost_{direction}.png")
             )
-    _GHOST_IMAGES["dead"] = raster.load_rgba(str(_IMAGES_DIR / "eyes_death.png"))
+    _GHOST_IMAGES["dead"] = raster.load_rgba(
+        str(_IMAGES_DIR / "eyes_death.png")
+    )
 
 
 def _pick_image_key(ghost: Ghost) -> str:
@@ -45,7 +47,9 @@ def _scaled_image(key: str, tile_size: int) -> np.ndarray:
     cache_key = (key, tile_size)
     scaled = _SCALED_CACHE.get(cache_key)
     if scaled is None:
-        scaled = raster.nearest_neighbor_scale(_GHOST_IMAGES[key], tile_size, tile_size)
+        scaled = raster.nearest_neighbor_scale(
+            _GHOST_IMAGES[key], tile_size, tile_size
+        )
         _SCALED_CACHE[cache_key] = scaled
     return scaled
 
@@ -56,7 +60,9 @@ def draw_ghosts(surface: pygame.Surface, ghosts: list[Ghost], tile_size: int,
     _load_ghost_images()
 
     for ghost in ghosts:
-        image = _scaled_image(_pick_image_key(ghost), tile_size - 2 * GHOST_INSET)
+        image = _scaled_image(
+            _pick_image_key(ghost), tile_size - 2 * GHOST_INSET
+        )
 
         px = offset_x + (ghost.grid_x + ghost.progress *
                          ghost.current_direction[0]) * tile_size + GHOST_INSET

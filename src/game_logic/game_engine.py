@@ -85,7 +85,9 @@ class LevelTimer:
     paused_ms: int = 0
 
     def pause(self, current_time: int) -> None:
-        """Stop the level countdown once without stopping respawn processing."""
+        """Stop the level countdown once without stopping respawn
+        processing.
+        """
         if self.paused_at is None:
             self.paused_at = current_time
 
@@ -97,7 +99,9 @@ class LevelTimer:
 
     def elapsed_ms(self, current_time: int) -> int:
         """Return elapsed level time excluding a current or completed pause."""
-        end_time = self.paused_at if self.paused_at is not None else current_time
+        end_time = (
+            self.paused_at if self.paused_at is not None else current_time
+        )
         return end_time - self.start_time - self.paused_ms
 
 
@@ -159,9 +163,16 @@ def terminal_state(
     timed_out: bool = False,
 ) -> GameState | None:
     """Return the explicit timeout, defeat, or cleared-level outcome."""
-    if timed_out or (player.lives <= 0 and not player.is_alive and not player.is_dying):
+    if timed_out or (
+        player.lives <= 0 and not player.is_alive and not player.is_dying
+    ):
         return GameState.GAME_OVER
-    if player.is_alive and not player.is_dying and not pacgums and not super_pacgums:
+    if (
+        player.is_alive
+        and not player.is_dying
+        and not pacgums
+        and not super_pacgums
+    ):
         return GameState.VICTORY
     return None
 
@@ -250,7 +261,9 @@ def _run_gameplay(screen: pygame.Surface, clock: ProjectClock,
     ghost_list: list[Ghost] = []
     for cls, pos in zip(ghost_classes, ghost_positions):
         x, y = pos
-        ghost_list.append(cls(x, y, tile_size, player, simulation_start, ghost_rng))
+        ghost_list.append(
+            cls(x, y, tile_size, player, simulation_start, ghost_rng)
+        )
     for ghost in ghost_list:
         ghost.home_positions = ghost_positions
     inky = cast(Inky, ghost_list[2])
@@ -293,7 +306,11 @@ def _run_gameplay(screen: pygame.Surface, clock: ProjectClock,
                         elif action == "menu":
                             pause_menu.cancel_confirmation()
                             clock.resume()
-                            return (GameState.MAIN_MENU, player.score, player.lives)
+                            return (
+                                GameState.MAIN_MENU,
+                                player.score,
+                                player.lives,
+                            )
                     pause_menu.update(pygame.mouse.get_pos())
                     pause_menu.draw(screen)
                     pygame.display.flip()
@@ -352,7 +369,9 @@ def _run_gameplay(screen: pygame.Surface, clock: ProjectClock,
         draw_maze(screen, maze, tile_size, offset_x, offset_y)
         draw_player(screen, player, tile_size, offset_x, offset_y)
         draw_pacgums(screen, pacgums, tile_size, offset_x, offset_y)
-        draw_super_pacgums(screen, super_pacgums, tile_size, offset_x, offset_y)
+        draw_super_pacgums(
+            screen, super_pacgums, tile_size, offset_x, offset_y
+        )
         draw_ghosts(screen, ghost_list, tile_size, offset_x, offset_y)
         draw_legend(
             surface=screen,
@@ -372,10 +391,12 @@ def game_loop(config: Config) -> None:
     """Run the menu and gameplay state machine until the user exits.
 
     Args:
-        config: Validated game settings for levels, scoring, and evaluator mode.
+        config: Validated game settings for levels, scoring, and evaluator
+            mode.
 
     Returns:
-        None. The loop exits the process in response to the window or Exit action.
+        None. The loop exits the process in response to the window or Exit
+        action.
     """
     pygame.init()
 
@@ -457,7 +478,9 @@ def game_loop(config: Config) -> None:
                 initial_lives=session.lives
             )
             if next_state == GameState.VICTORY:
-                state = transition_session(session, next_state, len(config.level))
+                state = transition_session(
+                    session, next_state, len(config.level)
+                )
                 if state is GameState.VICTORY:
                     music.play("menu")
                     victory_menu.set_score(

@@ -85,7 +85,9 @@ class EvaluatorFreezeTests(unittest.TestCase):
         self.assertEqual(evaluator.game_time(7000), 4000)
 
     def test_pause_during_freeze_is_not_counted(self) -> None:
-        """Esc Pause time never reaches the evaluator, so nothing is doubled."""
+        """Esc Pause time never reaches the evaluator, so nothing is
+        doubled.
+        """
         now = FakeMonotonic()
         clock = ProjectClock(monotonic=now, sleep=lambda _seconds: None)
         evaluator = EvaluatorMode(enabled=True)
@@ -162,7 +164,9 @@ class EvaluatorLevelClearTests(unittest.TestCase):
         self.assertEqual(super_pacgums, {})
 
     def test_cleared_level_is_a_normal_victory(self) -> None:
-        """A live player on a cleared level reaches the real VICTORY outcome."""
+        """A live player on a cleared level reaches the real VICTORY
+        outcome.
+        """
         evaluator = EvaluatorMode(enabled=True)
         player = Player(1, 1, 16, Config())
         pacgums, super_pacgums = _level_items()
@@ -368,7 +372,9 @@ class EvaluatorInputTests(unittest.TestCase):
         self.assertNotIn("SELECTED", " ".join(evaluator.hud_lines))
 
     def test_i_toggles_invincibility_when_no_ghost_is_selected(self) -> None:
-        """Released ghost controls reuse I as a visible invincibility toggle."""
+        """Released ghost controls reuse I as a visible invincibility
+        toggle.
+        """
         evaluator = EvaluatorMode(enabled=True)
         pacgums, super_pacgums = _level_items()
         ghosts, maze = _ghost_controls()
@@ -385,7 +391,9 @@ class EvaluatorInputTests(unittest.TestCase):
             pacgums, super_pacgums, ghosts, maze)
         self.assertFalse(evaluator.invincible)
 
-    def test_i_moves_selected_ghost_instead_of_toggling_invincibility(self) -> None:
+    def test_i_moves_selected_ghost_instead_of_toggling_invincibility(
+        self,
+    ) -> None:
         """I keeps its movement meaning while a ghost is selected."""
         evaluator = EvaluatorMode(enabled=True)
         pacgums, super_pacgums = _level_items()
@@ -404,8 +412,12 @@ class EvaluatorInputTests(unittest.TestCase):
         self.assertEqual((ghosts[0].grid_x, ghosts[0].grid_y), (2, 1))
         self.assertFalse(evaluator.invincible)
 
-    def test_invincibility_blocks_lethal_ghosts_but_not_edible_ghosts(self) -> None:
-        """The aid prevents death without disabling frightened-ghost scoring."""
+    def test_invincibility_blocks_lethal_ghosts_but_not_edible_ghosts(
+        self,
+    ) -> None:
+        """The aid prevents death without disabling frightened-ghost
+        scoring.
+        """
         evaluator = EvaluatorMode(enabled=True, invincible=True)
         player = Player(1, 1, 16, Config(points_per_ghost=25))
         lethal = Ghost(1, 1, 16, player, 0)

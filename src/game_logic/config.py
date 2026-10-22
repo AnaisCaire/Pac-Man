@@ -26,7 +26,9 @@ class Config:
 
     highscore_filename: str = field(default="scores/high_scores.json")
     level: list[LevelMazeSize] = field(
-        default_factory=lambda: [LevelMazeSize(width=15, height=15) for _ in range(10)]
+        default_factory=lambda: [
+            LevelMazeSize(width=15, height=15) for _ in range(10)
+        ]
     )
     lives: int = 3
     pacgum: int = 42
@@ -65,7 +67,9 @@ def _int_value(
         )
         return default
     if minimum is not None and raw < minimum:
-        _warning(field_name, f"must be >= {minimum}, got {raw}; using {default}")
+        _warning(
+            field_name, f"must be >= {minimum}, got {raw}; using {default}"
+        )
         return default
     return raw
 
@@ -133,7 +137,8 @@ def _level_size(raw: object, index: int) -> LevelMazeSize:
     if width > _MAX_LEVEL_SIZE:
         _warning(
             f"level[{index}].width",
-            f"must be <= {_MAX_LEVEL_SIZE}, got {width}; clamping to {_MAX_LEVEL_SIZE}",
+            f"must be <= {_MAX_LEVEL_SIZE}, got {width}; "
+            f"clamping to {_MAX_LEVEL_SIZE}",
         )
         width = _MAX_LEVEL_SIZE
     if height > _MAX_LEVEL_SIZE:
@@ -149,7 +154,9 @@ def _level_size(raw: object, index: int) -> LevelMazeSize:
     return LevelMazeSize(width=width, height=height)
 
 
-def _levels_value(raw: object, default: list[LevelMazeSize]) -> list[LevelMazeSize]:
+def _levels_value(
+    raw: object, default: list[LevelMazeSize]
+) -> list[LevelMazeSize]:
     """Normalize at least ten generator-safe levels."""
     if raw is default:
         return default
@@ -162,7 +169,9 @@ def _levels_value(raw: object, default: list[LevelMazeSize]) -> list[LevelMazeSi
             "level",
             f"must contain {_MIN_LEVELS} levels; extending with 15x15",
         )
-        levels.extend(LevelMazeSize() for _ in range(_MIN_LEVELS - len(levels)))
+        levels.extend(
+            LevelMazeSize() for _ in range(_MIN_LEVELS - len(levels))
+        )
     return levels
 
 
@@ -181,7 +190,9 @@ def _config_from_dict(data: dict[str, Any]) -> Config:
             defaults.highscore_filename,
         ),
         level=_levels_value(data.get("level", defaults.level), defaults.level),
-        lives=_int_value(data.get("lives", defaults.lives), defaults.lives, "lives", 1),
+        lives=_int_value(
+            data.get("lives", defaults.lives), defaults.lives, "lives", 1
+        ),
         pacgum=_int_value(
             data.get("pacgum", defaults.pacgum),
             defaults.pacgum,
@@ -195,7 +206,9 @@ def _config_from_dict(data: dict[str, Any]) -> Config:
             0,
         ),
         points_per_super_pacgum=_int_value(
-            data.get("points_per_super_pacgum", defaults.points_per_super_pacgum),
+            data.get(
+                "points_per_super_pacgum", defaults.points_per_super_pacgum
+            ),
             defaults.points_per_super_pacgum,
             "points_per_super_pacgum",
             0,
@@ -206,7 +219,9 @@ def _config_from_dict(data: dict[str, Any]) -> Config:
             "points_per_ghost",
             0,
         ),
-        seed=_int_value(data.get("seed", defaults.seed), defaults.seed, "seed"),
+        seed=_int_value(
+            data.get("seed", defaults.seed), defaults.seed, "seed"
+        ),
         level_max_time=_int_value(
             data.get("level_max_time", defaults.level_max_time),
             defaults.level_max_time,
@@ -222,10 +237,14 @@ def _config_from_dict(data: dict[str, Any]) -> Config:
 
 
 def parse_config(path: str) -> Config:
-    """Parse a commented JSON config file, recovering bad fields independently."""
+    """Parse a commented JSON config file, recovering bad fields
+    independently.
+    """
     config_path = Path(path)
     if config_path.suffix != ".json":
-        logger.warning("config path must end with .json: %s; using defaults", path)
+        logger.warning(
+            "config path must end with .json: %s; using defaults", path
+        )
         return Config()
     try:
         with config_path.open("r", encoding="utf-8") as config_file:
@@ -235,7 +254,9 @@ def parse_config(path: str) -> Config:
         logger.warning("config file not found: %s; using defaults", path)
         return Config()
     except OSError as error:
-        logger.warning("cannot read config file %s: %s; using defaults", path, error)
+        logger.warning(
+            "cannot read config file %s: %s; using defaults", path, error
+        )
         return Config()
     except json.JSONDecodeError as error:
         logger.warning("invalid JSON in %s: %s; using defaults", path, error)

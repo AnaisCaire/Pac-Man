@@ -24,7 +24,9 @@ class PauseScreenTests(unittest.TestCase):
 
     def test_return_to_menu_requires_confirmation(self) -> None:
         screen = self.make_screen()
-        event = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=1, pos=(0, 0))
+        event = pygame.event.Event(
+            pygame.MOUSEBUTTONDOWN, button=1, pos=(0, 0)
+        )
 
         with patch(
             "src.ui.screens.sub_screens._handle_button_click",

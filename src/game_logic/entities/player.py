@@ -57,7 +57,9 @@ class Player(Entity):
         self.invincibility_duration: int = 2000  # 2 seconds
 
     def update(self, maze: Maze) -> None:
-        """Advance the player one frame: handle movement and wall collisions."""
+        """Advance the player one frame: handle movement and wall
+        collisions.
+        """
         if self.moving:
             self.progress += self.speed / self.tile_size
             if self.progress >= 1.0:
@@ -86,7 +88,10 @@ class Player(Entity):
         this domain method never reads a wall clock itself.
         """
         if self.is_powered_up:
-            if current_time - self.power_up_start_time >= self.power_up_duration:
+            if (
+                current_time - self.power_up_start_time
+                >= self.power_up_duration
+            ):
                 self.is_powered_up = False
 
         # advance death animation
@@ -102,7 +107,10 @@ class Player(Entity):
 
         # expire invincibility window
         if self.is_invincible:
-            if current_time - self.invincibility_start >= self.invincibility_duration:
+            if (
+                current_time - self.invincibility_start
+                >= self.invincibility_duration
+            ):
                 self.is_invincible = False
 
     def start_death_animation(self) -> None:
@@ -134,7 +142,8 @@ class Player(Entity):
         self.is_dying = False
         self.death_progress = 0.0
         self.is_alive = True
-        # grant brief invincibility so a ghost on the spawn tile can't kill instantly
+        # grant brief invincibility so a ghost on the spawn tile can't kill
+        # instantly
         self.is_invincible = True
         self.invincibility_start = current_time
 
@@ -157,7 +166,11 @@ class Player(Entity):
                 if ghost.is_frightened:
                     self.score += self.points_per_ghost
                     ghost.die()
-                elif not ghost.is_dead and not self.is_invincible and not invincible:
+                elif (
+                    not ghost.is_dead
+                    and not self.is_invincible
+                    and not invincible
+                ):
                     self.start_death_animation()
                     return  # one collision is enough per frame
 

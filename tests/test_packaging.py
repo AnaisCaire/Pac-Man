@@ -15,7 +15,9 @@ class PackagingTests(unittest.TestCase):
     """The repository exposes one documented native packaging entry point."""
 
     def test_packaging_files_and_make_target_exist(self) -> None:
-        """Keep the root spec, user instructions, script and Make target together."""
+        """Keep the root spec, user instructions, script and Make target
+        together.
+        """
         for relative_path in (
             "pac-man.spec",
             "PACKAGE-INSTRUCTIONS.txt",
