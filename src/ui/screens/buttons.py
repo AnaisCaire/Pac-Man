@@ -4,6 +4,7 @@ from ..gfx import bitmap_font, raster
 
 BG_COLOR = (106, 159, 181)
 TEXT_COLOR = (255, 255, 255)
+TEXT_COLOR_B = (0, 0, 0)
 HIGHLIGHT_COLOR = (255, 255, 0)
 _PADDING = 12
 
@@ -39,6 +40,7 @@ class UIElement:
         text: str,
         font_size: int,
         action: str = "",
+        text_color: tuple[int, int, int] = TEXT_COLOR
     ) -> None:
         """Build normal and highlighted button images around one center
         point.
@@ -49,7 +51,7 @@ class UIElement:
         default_image = create_surface_with_text(
             text=text,
             font_size=font_size,
-            text_rgb=TEXT_COLOR,
+            text_rgb=text_color,
             bg_rgb=BG_COLOR,
         )
         highlighted_image = create_surface_with_text(

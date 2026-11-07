@@ -1,5 +1,5 @@
 from ...scores.model import ScoreEntry
-from .buttons import UIElement
+from .buttons import TEXT_COLOR_B, UIElement
 from ..gfx import bitmap_font, raster
 import pygame
 import pathlib
@@ -82,8 +82,13 @@ class InstructionsScreen():
         """Load and fit the controls image above evaluator help and Back."""
         cx = screen_width // 2
         by = screen_height - 50
-        self.back_btn = UIElement(center_position=(cx, by), text="Back",
-                                  font_size=BUTTON_FONT_SIZE, action="back")
+        self.back_btn = UIElement(
+            center_position=(cx, by),
+            text="Back",
+            font_size=25,
+            action="back",
+            text_color=TEXT_COLOR_B
+        )
         raw_image = raster.load_rgba(str(_IMAGES_DIR / "instructions.png"))
         help_height = len(EVALUATOR_HELP) * _HELP_LINE_HEIGHT
         max_h = by - 40 - help_height
