@@ -51,7 +51,9 @@ class ProjectClockTests(unittest.TestCase):
 
         self.assertEqual(clock.get_ticks_ms(), 1000)
 
-    def test_paused_simulation_does_not_expire_power_or_ghost_timers(self) -> None:
+    def test_paused_simulation_does_not_expire_power_or_ghost_timers(
+        self,
+    ) -> None:
         now = FakeMonotonic()
         clock = ProjectClock(monotonic=now, sleep=lambda _seconds: None)
         player = Player(1, 1, 16, Config())

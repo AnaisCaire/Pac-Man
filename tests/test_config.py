@@ -15,13 +15,17 @@ class ConfigParsingTests(unittest.TestCase):
     """Exercise commented JSON parsing and per-field recovery."""
 
     def parse_text(self, text: str, filename: str = "config.json") -> Config:
-        """Write a temporary config file and parse it through the public seam."""
+        """Write a temporary config file and parse it through the public
+        seam.
+        """
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / filename
             path.write_text(text, encoding="utf-8")
             return parse_config(str(path))
 
-    def test_valid_commented_config_preserves_hash_inside_strings(self) -> None:
+    def test_valid_commented_config_preserves_hash_inside_strings(
+        self,
+    ) -> None:
         """Only full-line comments are stripped before JSON parsing."""
         config = self.parse_text(
             """
@@ -76,7 +80,9 @@ class ConfigParsingTests(unittest.TestCase):
             }))
 
         self.assertEqual(len(config.level), 10)
-        self.assertEqual((config.level[0].width, config.level[0].height), (18, 18))
+        self.assertEqual(
+            (config.level[0].width, config.level[0].height), (18, 18)
+        )
         self.assertTrue(all(
             15 <= level.width <= 18 and 15 <= level.height <= 18
             for level in config.level
@@ -117,7 +123,9 @@ class ConfigParsingTests(unittest.TestCase):
             )
 
         defaults = Config()
-        self.assertEqual(config.highscore_filename, defaults.highscore_filename)
+        self.assertEqual(
+            config.highscore_filename, defaults.highscore_filename
+        )
         self.assertEqual(config.lives, defaults.lives)
         self.assertEqual(config.pacgum, defaults.pacgum)
         self.assertEqual(config.points_per_pacgum, defaults.points_per_pacgum)
@@ -129,11 +137,14 @@ class ConfigParsingTests(unittest.TestCase):
         self.assertEqual(config.seed, defaults.seed)
         self.assertEqual(config.level_max_time, defaults.level_max_time)
         self.assertFalse(config.evaluator_mode)
-        self.assertEqual([(level.width, level.height) for level in config.level[:3]], [
-            (15, 15),
-            (15, 15),
-            (18, 18),
-        ])
+        self.assertEqual(
+            [(level.width, level.height) for level in config.level[:3]],
+            [
+                (15, 15),
+                (15, 15),
+                (18, 18),
+            ],
+        )
         self.assertEqual(len(config.level), 10)
         self.assertGreaterEqual(len(logs.output), 9)
 
@@ -170,7 +181,9 @@ class ConfigParsingTests(unittest.TestCase):
             config = self.parse_text(json.dumps({"lives": 5}))
 
         self.assertEqual(config.lives, 5)
-        self.assertEqual(config.highscore_filename, defaults.highscore_filename)
+        self.assertEqual(
+            config.highscore_filename, defaults.highscore_filename
+        )
         self.assertEqual(config.level, defaults.level)
         self.assertTrue(any(
             "highscore_filename: missing; using" in message
@@ -199,13 +212,17 @@ class ConfigParsingTests(unittest.TestCase):
         self.assertEqual(list_root_config, defaults)
 
     def test_unreadable_file_and_non_json_extension_use_defaults(self) -> None:
-        """I/O failures and wrong extensions are reported without tracebacks."""
+        """I/O failures and wrong extensions are reported without
+        tracebacks.
+        """
         defaults = Config()
 
         with self.assertLogs("src.game_logic.config", level="WARNING"):
             extension_config = self.parse_text("{}", filename="config.txt")
 
-        with patch("pathlib.Path.open", side_effect=OSError("permission denied")):
+        with patch(
+            "pathlib.Path.open", side_effect=OSError("permission denied")
+        ):
             with self.assertLogs("src.game_logic.config", level="WARNING"):
                 unreadable_config = parse_config("config.json")
 

@@ -63,7 +63,9 @@ class ScoreEntryScreenTests(unittest.TestCase):
             "NAME: I",
             [call.args[1] for call in draw_center.call_args_list],
         )
-        self.assertTrue(bitmap_font.render_text("I", 4, (255, 255, 255))[:, :, 3].any())
+        self.assertTrue(
+            bitmap_font.render_text("I", 4, (255, 255, 255))[:, :, 3].any()
+        )
 
 
 class EvaluatorRunScoreEntryTests(unittest.TestCase):

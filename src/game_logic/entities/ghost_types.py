@@ -26,11 +26,13 @@ class Pinky(Ghost):
 
 class Inky(Ghost):
     """
-    Cyan ghost — uses both Blinky's position and Pac-Man's position to pick a target.
+    Cyan ghost — uses both Blinky's position and Pac-Man's position to pick a
+    target.
     Algorithm:
       1. Find the tile 2 ahead of Pac-Man → call it P
       2. Draw a vector from Blinky to P, then double it → that's Inky's target
-    Inky needs a reference to Blinky so the game engine must pass it after creation.
+    Inky needs a reference to Blinky so the game engine must pass it after
+    creation.
     """
     sprite = 'cyan'
 
@@ -74,7 +76,8 @@ class Inky(Ghost):
 class Clyde(Ghost):
     """
     Yellow ghost — chases Pac-Man when far away, scatters to home when close.
-    Threshold: if squared distance to player > 8^2 (64), chase; otherwise scatter.
+    Threshold: if squared distance to player > 8^2 (64), chase; otherwise
+    scatter.
     """
     sprite = 'yellow'
 

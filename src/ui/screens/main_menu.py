@@ -11,7 +11,9 @@ BG_COLOR = (106, 159, 181)
 
 
 class MainMenu:
-    """Draws the main menu and returns an action string when a button is clicked."""
+    """Draws the main menu and returns an action string when a button is
+    clicked.
+    """
 
     # maps button text / action string for game engine
     ACTIONS = {
@@ -46,7 +48,9 @@ class MainMenu:
             self.buttons.append(btn)
 
     def handle_event(self, event: pygame.event.Event) -> str | None:
-        """Call once per event. Returns an action string on click, else None."""
+        """Call once per event. Returns an action string on click, else
+        None.
+        """
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             for button in self.buttons:
                 if button.rect.collidepoint(event.pos):

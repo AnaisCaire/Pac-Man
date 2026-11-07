@@ -39,7 +39,9 @@ class Maze:
         self,
         maze_size: LevelMazeSize,
         seed: int,
-        grid_factory: Callable[[LevelMazeSize, int], list[list[int]]] = _generate_grid,
+        grid_factory: Callable[
+            [LevelMazeSize, int], list[list[int]]
+        ] = _generate_grid,
     ) -> None:
         """Generate and validate one maze for the requested size and seed."""
         self.grid = grid_factory(maze_size, seed)
@@ -56,13 +58,19 @@ class Maze:
     def _validate_grid(self, maze_size: LevelMazeSize) -> None:
         """Reject malformed generator output before gameplay reads walls."""
         if len(self.grid) != maze_size.height:
-            raise MazeGenerationError("maze height does not match configuration")
-        if not self.grid or any(len(row) != maze_size.width for row in self.grid):
+            raise MazeGenerationError(
+                "maze height does not match configuration"
+            )
+        if not self.grid or any(
+            len(row) != maze_size.width for row in self.grid
+        ):
             raise MazeGenerationError("maze grid must be rectangular")
         for row in self.grid:
             for cell in row:
                 if type(cell) is not int or not 0 <= cell <= 15:
-                    raise MazeGenerationError("maze grid contains invalid cell values")
+                    raise MazeGenerationError(
+                        "maze grid contains invalid cell values"
+                    )
 
     def has_wall(self, x: int, y: int, direction: str) -> bool:
         """Return True if there is a wall in the given N/E/S/W direction."""
@@ -92,7 +100,9 @@ class Maze:
         raise MazeGenerationError("maze has no valid spawn cell")
 
     def _reachable_from(self, start: tuple[int, int]) -> set[tuple[int, int]]:
-        """Return all walkable cells reachable from `start` using maze walls."""
+        """Return all walkable cells reachable from `start` using maze
+        walls.
+        """
         if self.is_wall(*start):
             return set()
         reachable = {start}
@@ -103,7 +113,9 @@ class Maze:
                 nx, ny = x + dx, y + dy
                 if (nx, ny) in reachable or self.has_wall(x, y, direction):
                     continue
-                if self.is_wall(nx, ny) or self.has_wall(nx, ny, _OPPOSITE[direction]):
+                if self.is_wall(nx, ny) or self.has_wall(
+                    nx, ny, _OPPOSITE[direction]
+                ):
                     continue
                 reachable.add((nx, ny))
                 frontier.append((nx, ny))

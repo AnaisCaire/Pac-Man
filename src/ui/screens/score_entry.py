@@ -32,7 +32,9 @@ def _draw_center(surface: pygame.Surface, text: str, y: int,
 class ScoreEntryScreen:
     """Collect one validated player name before returning to the main menu."""
 
-    def __init__(self, screen_width: int, screen_height: int, image_name: str) -> None:
+    def __init__(
+        self, screen_width: int, screen_height: int, image_name: str
+    ) -> None:
         """Load the end-state image and initialize an empty score form."""
         self.score = 0
         self.name = ""
@@ -40,10 +42,14 @@ class ScoreEntryScreen:
         center_x = screen_width // 2
         raw_image = raster.load_rgba(str(_IMAGES_DIR / image_name))
         max_height = screen_height - 320
-        scale = min(screen_width / raw_image.shape[0], max_height / raw_image.shape[1])
+        scale = min(
+            screen_width / raw_image.shape[0], max_height / raw_image.shape[1]
+        )
         image_width = int(raw_image.shape[0] * scale)
         image_height = int(raw_image.shape[1] * scale)
-        self.image = raster.nearest_neighbor_scale(raw_image, image_width, image_height)
+        self.image = raster.nearest_neighbor_scale(
+            raw_image, image_width, image_height
+        )
         self.image_rect = pygame.Rect((0, 0), (image_width, image_height))
         self.image_rect.center = (center_x, image_height // 2 + 10)
         self.evaluator_run = False
@@ -62,7 +68,9 @@ class ScoreEntryScreen:
     def handle_event(self, event: pygame.event.Event) -> str | None:
         """Edit the player name or return the resulting navigation action."""
         if self.evaluator_run:
-            is_enter = event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN
+            is_enter = (
+                event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN
+            )
             return MENU_ACTION if is_enter else None
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_BACKSPACE:
@@ -89,7 +97,9 @@ class ScoreEntryScreen:
         return "submit"
 
     def update(self, mouse_pos: tuple[int, int]) -> None:
-        """Keep the screen adapter contract; keyboard input needs no hover state."""
+        """Keep the screen adapter contract; keyboard input needs no hover
+        state.
+        """
 
     def draw(self, surface: pygame.Surface) -> None:
         """Draw final score, name input, validation, and evaluator messages."""

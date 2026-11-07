@@ -72,7 +72,9 @@ class GhostDirectionTests(unittest.TestCase):
 
         choice.assert_called_once_with([(0, 1), (1, 0)])
 
-    def test_normal_ghost_reverses_only_when_a_dead_end_requires_it(self) -> None:
+    def test_normal_ghost_reverses_only_when_a_dead_end_requires_it(
+        self,
+    ) -> None:
         maze = fixture_maze(TRAP_GRID)
         player = Player(2, 1, 16, Config())
         ghost = Ghost(1, 0, 16, player, 0)
@@ -105,7 +107,9 @@ class GhostLifecycleTests(unittest.TestCase):
 
         self.assertEqual(dead.progress, live.progress * 2)
 
-    def test_dead_eyes_retarget_before_respawning_at_a_safe_corner(self) -> None:
+    def test_dead_eyes_retarget_before_respawning_at_a_safe_corner(
+        self,
+    ) -> None:
         player = Player(0, 0, 16, Config())
         ghost = Ghost(0, 0, 16, player, 0)
         ghost.home_positions = [(0, 0), (14, 0)]

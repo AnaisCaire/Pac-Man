@@ -31,7 +31,10 @@ class MazeAdapterTests(unittest.TestCase):
         calls: list[tuple[tuple[int, int], int, bool]] = []
 
         class FakeGenerator:
-            def __init__(self, size: tuple[int, int], seed: int, perfect: bool) -> None:
+
+            def __init__(
+                self, size: tuple[int, int], seed: int, perfect: bool
+            ) -> None:
                 calls.append((size, seed, perfect))
                 self.maze = open_grid(*size)
 
@@ -42,8 +45,12 @@ class MazeAdapterTests(unittest.TestCase):
         self.assertEqual(len(grid), 17)
         self.assertEqual(len(grid[0]), 16)
 
-    def test_same_seed_same_grid_and_tested_different_seeds_differ(self) -> None:
-        """The external generator remains structurally deterministic per seed."""
+    def test_same_seed_same_grid_and_tested_different_seeds_differ(
+        self,
+    ) -> None:
+        """The external generator remains structurally deterministic per
+        seed.
+        """
         first = Maze(SIZE, 42).grid
         second = Maze(SIZE, 42).grid
         seed_one = Maze(SIZE, 1).grid
@@ -53,7 +60,9 @@ class MazeAdapterTests(unittest.TestCase):
         self.assertNotEqual(seed_one, seed_two)
 
     def test_level_seed_policy_is_fixed_first_random_later(self) -> None:
-        """Only level zero uses the configured seed; later levels use injected RNG."""
+        """Only level zero uses the configured seed; later levels use injected
+        RNG.
+        """
         rng = random.Random(7)
         expected_rng = random.Random(7)
 
@@ -79,21 +88,30 @@ class MazeAdapterTests(unittest.TestCase):
             Maze(
                 SIZE,
                 1,
-                grid_factory=lambda _size, _seed: [[16] * 15 for _ in range(15)],
+                grid_factory=lambda _size, _seed: [
+                    [16] * 15 for _ in range(15)
+                ],
             )
 
     def test_generator_exception_becomes_maze_error(self) -> None:
         """Import/constructor failures are wrapped at the adapter boundary."""
         class BrokenGenerator:
-            def __init__(self, size: tuple[int, int], seed: int, perfect: bool) -> None:
+
+            def __init__(
+                self, size: tuple[int, int], seed: int, perfect: bool
+            ) -> None:
                 raise RuntimeError("boom")
 
         with patch("src.game_logic.maze.MazeGenerator", BrokenGenerator):
-            with self.assertRaisesRegex(MazeGenerationError, "maze generator failed"):
+            with self.assertRaisesRegex(
+                MazeGenerationError, "maze generator failed"
+            ):
                 _generate_grid(SIZE, 42)
 
     def test_mandatory_placements_are_reachable_and_distinct(self) -> None:
-        """Spawn, pellets, super-pellets, and ghosts use valid reachable cells."""
+        """Spawn, pellets, super-pellets, and ghosts use valid reachable
+        cells.
+        """
         maze = Maze(SIZE, 1, grid_factory=lambda _size, _seed: open_grid())
         spawn = maze.find_spawn()
         super_pacgums = maze.place_super_pacgums(50, spawn)
@@ -116,7 +134,9 @@ class MazeAdapterTests(unittest.TestCase):
         self.assertTrue(set(pacgums).isdisjoint(super_pacgums))
 
     def test_pacgum_rng_is_injected_and_independent(self) -> None:
-        """Pacgum placement depends on the provided RNG, not module-global random."""
+        """Pacgum placement depends on the provided RNG, not module-global
+        random.
+        """
         maze = Maze(SIZE, 1, grid_factory=lambda _size, _seed: open_grid())
         spawn = maze.find_spawn()
         first = maze.place_pacgums(spawn, 5, 10, random.Random(3))
@@ -136,7 +156,9 @@ class MazeAdapterTests(unittest.TestCase):
             maze.place_super_pacgums(50, maze.find_spawn())
 
     def test_frightened_ghost_rng_is_injected(self) -> None:
-        """Frightened tie-breaking uses the ghost RNG, not module-global random."""
+        """Frightened tie-breaking uses the ghost RNG, not module-global
+        random.
+        """
         maze = Maze(SIZE, 1, grid_factory=lambda _size, _seed: open_grid())
         player = Player(7, 7, 1, Config())
         first = Ghost(7, 7, 1, player, 0, random.Random(5))
@@ -144,7 +166,9 @@ class MazeAdapterTests(unittest.TestCase):
         first.state = GhostState.FRIGHTENED
         second.state = GhostState.FRIGHTENED
 
-        self.assertEqual(first._choose_direction(maze), second._choose_direction(maze))
+        self.assertEqual(
+            first._choose_direction(maze), second._choose_direction(maze)
+        )
 
     def test_inky_accepts_the_gameplay_rng(self) -> None:
         """Inky preserves Ghost's RNG constructor contract used by gameplay."""
@@ -188,7 +212,9 @@ class ShortestPathTests(unittest.TestCase):
         self.assertEqual(maze.first_step_towards((2, 0), (0, 0)), (-1, 0))
 
     def test_trap_goes_around_instead_of_into_dead_end(self) -> None:
-        """Greedy distance ties and picks north into a dead end; BFS goes south."""
+        """Greedy distance ties and picks north into a dead end; BFS goes
+        south.
+        """
         maze = fixture_maze(TRAP_GRID)
 
         self.assertEqual(maze.first_step_towards((0, 1), (2, 1)), (0, 1))

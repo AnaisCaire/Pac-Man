@@ -30,7 +30,9 @@ class FakeMonotonic:
 def _powered_player_and_ghosts(
     start_time: int,
 ) -> tuple[Player, Ghost, Ghost]:
-    """Return a powered-up player on ghost `eaten`'s tile and a distant ghost."""
+    """Return a powered-up player on ghost `eaten`'s tile and a distant
+    ghost.
+    """
     player = Player(1, 1, 16, Config(points_per_ghost=33))
     eaten = Ghost(1, 1, 16, player, start_time, random.Random(1))
     distant = Ghost(5, 5, 16, player, start_time, random.Random(2))
@@ -62,7 +64,9 @@ class FreezeCollisionFrameTests(unittest.TestCase):
         self.assertTrue(player.is_powered_up)
 
     def test_unfreeze_resumes_frightened_time_without_jump(self) -> None:
-        """Surviving frightened ghosts keep their remaining time after unfreeze."""
+        """Surviving frightened ghosts keep their remaining time after
+        unfreeze.
+        """
         evaluator = EvaluatorMode(enabled=True)
         player, eaten, distant = _powered_player_and_ghosts(0)
         evaluator.toggle_freeze(1000)
@@ -79,7 +83,9 @@ class FreezeCollisionFrameTests(unittest.TestCase):
     def test_death_while_frozen_costs_one_life_and_respawns_immediately(
         self,
     ) -> None:
-        """Freeze remains useful after a lethal collision without unfreezing."""
+        """Freeze remains useful after a lethal collision without
+        unfreezing.
+        """
         evaluator = EvaluatorMode(enabled=True)
         player = Player(1, 1, 16, Config(lives=2))
         ghost = Ghost(1, 1, 16, player, 0, random.Random(1))

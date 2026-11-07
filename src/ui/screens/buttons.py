@@ -14,7 +14,9 @@ def create_surface_with_text(
     text_rgb: tuple[int, int, int],
     bg_rgb: tuple[int, int, int],
 ) -> np.ndarray:
-    """Returns an RGBA pixel array with the text baked over a solid background."""
+    """Returns an RGBA pixel array with the text baked over a solid
+    background.
+    """
     scale = max(1, int(font_size) // 8)
     text_rgba = bitmap_font.render_text(text, scale, text_rgb)
     width = text_rgba.shape[0] + 2 * _PADDING
@@ -38,12 +40,17 @@ class UIElement:
         font_size: int,
         action: str = "",
     ) -> None:
-        """Build normal and highlighted button images around one center point."""
+        """Build normal and highlighted button images around one center
+        point.
+        """
         self.mouse_over = False
         self.action = action
 
         default_image = create_surface_with_text(
-            text=text, font_size=font_size, text_rgb=TEXT_COLOR, bg_rgb=BG_COLOR
+            text=text,
+            font_size=font_size,
+            text_rgb=TEXT_COLOR,
+            bg_rgb=BG_COLOR,
         )
         highlighted_image = create_surface_with_text(
             text=text,
@@ -59,7 +66,8 @@ class UIElement:
             rect.center = center_position
             self.rects.append(rect)
 
-    # properties that vary the image and its rect when the mouse is over the element
+    # properties that vary the image and its rect when the mouse is over the
+    # element
     @property
     def image(self) -> np.ndarray:
         """Return the image matching the current hover state."""

@@ -10,7 +10,11 @@ import pygame
 from src.game_logic.config import Config, LevelMazeSize
 from src.game_logic.entities.ghosts import Ghost, GhostState
 from src.game_logic.entities.items import Pacgum, SuperPacgum
-from src.game_logic.entities.player import Player, handle_input, resolve_collisions
+from src.game_logic.entities.player import (
+    Player,
+    handle_input,
+    resolve_collisions,
+)
 from src.game_logic.game_engine import GameState, terminal_state
 from src.game_logic.maze import Maze
 
@@ -37,8 +41,12 @@ class GameplayRuleTests(unittest.TestCase):
         self.assertEqual(pacgums, {})
         self.assertEqual(super_pacgums, {})
 
-    def test_super_pacgum_resolves_before_same_tile_ghost_collision(self) -> None:
-        """Items activate power-up before same-frame ghost collisions resolve."""
+    def test_super_pacgum_resolves_before_same_tile_ghost_collision(
+        self,
+    ) -> None:
+        """Items activate power-up before same-frame ghost collisions
+        resolve.
+        """
         config = Config(points_per_super_pacgum=22, points_per_ghost=33)
         player = Player(1, 1, 16, config)
         ghost = Ghost(1, 1, 16, player, 0, random.Random(1))
@@ -51,7 +59,9 @@ class GameplayRuleTests(unittest.TestCase):
         self.assertFalse(player.is_dying)
         self.assertEqual(ghost.state, GhostState.DEAD)
 
-    def test_second_super_pacgum_refreshes_surviving_ghost_timers(self) -> None:
+    def test_second_super_pacgum_refreshes_surviving_ghost_timers(
+        self,
+    ) -> None:
         """A refreshed power window keeps player and ghosts synchronized."""
         config = Config(points_per_super_pacgum=22)
         player = Player(1, 1, 16, config)
@@ -112,7 +122,9 @@ class GameplayRuleTests(unittest.TestCase):
         self.assertFalse(player.is_alive)
         self.assertFalse(player.is_dying)
 
-    def test_last_collectible_lethal_collision_waits_for_death_outcome(self) -> None:
+    def test_last_collectible_lethal_collision_waits_for_death_outcome(
+        self,
+    ) -> None:
         """A lethal same-frame collision cannot produce premature victory."""
         player = Player(1, 1, 16, Config(lives=1))
         ghost = Ghost(1, 1, 16, player, 0, random.Random(1))
@@ -124,10 +136,14 @@ class GameplayRuleTests(unittest.TestCase):
         self.assertIsNone(terminal_state(player, pacgums, {}))
         player.death_progress = 0.98
         player.update_timers(200)
-        self.assertEqual(terminal_state(player, pacgums, {}), GameState.GAME_OVER)
+        self.assertEqual(
+            terminal_state(player, pacgums, {}), GameState.GAME_OVER
+        )
 
     def test_timeout_has_priority_over_a_same_frame_collision(self) -> None:
-        """Timeout ends the level before collisions are processed that frame."""
+        """Timeout ends the level before collisions are processed that
+        frame.
+        """
         player = Player(1, 1, 16, Config(lives=1))
         pacgums = {(1, 1): Pacgum(1, 1, 10)}
 
@@ -136,8 +152,12 @@ class GameplayRuleTests(unittest.TestCase):
             GameState.GAME_OVER,
         )
 
-    def test_frightened_collision_at_expiry_still_scores_before_timers(self) -> None:
-        """Collision resolution uses the state visible at that frame's start."""
+    def test_frightened_collision_at_expiry_still_scores_before_timers(
+        self,
+    ) -> None:
+        """Collision resolution uses the state visible at that frame's
+        start.
+        """
         player = Player(1, 1, 16, Config(points_per_ghost=33))
         player.activate_power_up(0)
         ghost = Ghost(1, 1, 16, player, 0, random.Random(1))
@@ -154,7 +174,9 @@ class GameplayRuleTests(unittest.TestCase):
         self.assertFalse(player.is_powered_up)
 
     def test_super_pacgum_scores_a_moving_ghost_on_the_same_tile(self) -> None:
-        """Frightening cannot move an overlapping ghost before collision resolves."""
+        """Frightening cannot move an overlapping ghost before collision
+        resolves.
+        """
         config = Config(points_per_super_pacgum=22, points_per_ghost=33)
         player = Player(1, 1, 16, config)
         ghost = Ghost(1, 1, 16, player, 0, random.Random(1))
@@ -180,7 +202,9 @@ class GameplayRuleTests(unittest.TestCase):
         self.assertEqual(player.score, 22)
         self.assertEqual(ghost.state, GhostState.DEAD)
 
-    def test_entering_a_super_pacgum_tile_consumes_it_immediately(self) -> None:
+    def test_entering_a_super_pacgum_tile_consumes_it_immediately(
+        self,
+    ) -> None:
         config = Config()
         player = Player(1, 1, 16, config)
         super_pacgums = {(1, 1): SuperPacgum(1, 1, 50)}

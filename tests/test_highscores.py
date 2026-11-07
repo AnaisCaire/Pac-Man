@@ -65,8 +65,12 @@ class HighscoreTests(unittest.TestCase):
             with self.assertLogs("src.scores.scores_utils", level="WARNING"):
                 self.assertEqual(load_highscores(path), [])
 
-    def test_invalid_highscore_shape_logs_and_recovers_to_empty_scores(self) -> None:
-        """Valid JSON with the wrong schema never crashes or masquerades as data."""
+    def test_invalid_highscore_shape_logs_and_recovers_to_empty_scores(
+        self,
+    ) -> None:
+        """Valid JSON with the wrong schema never crashes or masquerades as
+        data.
+        """
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "scores.json"
             path.write_text('{"highscores": "not a list"}', encoding="utf-8")
@@ -95,7 +99,9 @@ class HighscoreTests(unittest.TestCase):
         )
 
     def test_packaged_relative_path_uses_writable_windows_data(self) -> None:
-        """A Windows bundle never writes highscores inside its install folder."""
+        """A Windows bundle never writes highscores inside its install
+        folder.
+        """
         with (
             tempfile.TemporaryDirectory() as directory,
             patch.object(sys, "frozen", True, create=True),
@@ -124,7 +130,9 @@ class HighscoreTests(unittest.TestCase):
             Path(directory) / "pacman" / "scores" / "high_scores.json",
         )
 
-    def test_load_preserves_file_order_and_update_replaces_same_name(self) -> None:
+    def test_load_preserves_file_order_and_update_replaces_same_name(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "scores.json"
             path.write_text(json.dumps({"highscores": [
@@ -152,7 +160,9 @@ class HighscoreTests(unittest.TestCase):
             self.assertTrue(save_highscores(path, original))
             blocked_path = path / "child.json"
 
-            self.assertFalse(save_highscores(blocked_path, [ScoreEntry("Mario", 50)]))
+            self.assertFalse(
+                save_highscores(blocked_path, [ScoreEntry("Mario", 50)])
+            )
             self.assertEqual(load_highscores(path), original)
 
 

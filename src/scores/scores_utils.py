@@ -16,7 +16,9 @@ logger = logging.getLogger(__name__)
 
 
 def resolve_highscore_path(filename: str) -> Path:
-    """Resolve relative packaged scores beneath a writable user-data directory."""
+    """Resolve relative packaged scores beneath a writable user-data
+    directory.
+    """
     path = Path(filename)
     if not getattr(sys, "frozen", False) or path.is_absolute():
         return path
@@ -104,7 +106,9 @@ def save_highscores(path: Path, scores: list[ScoreEntry]) -> bool:
 
 
 def record_score(path: Path, entry: ScoreEntry) -> list[ScoreEntry] | None:
-    """Persist one submitted score and return the resulting board on success."""
+    """Persist one submitted score and return the resulting board on
+    success.
+    """
     scores = {score.name: score for score in load_highscores(path)}
     scores[entry.name] = entry
     ranked = rank_scores(list(scores.values()))

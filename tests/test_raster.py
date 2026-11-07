@@ -14,8 +14,12 @@ from src.ui.gfx import raster
 class RasterLoadingTests(unittest.TestCase):
     """Broken optional images remain visible and never stop startup."""
 
-    def test_missing_and_corrupt_images_return_visible_rgba_placeholder(self) -> None:
-        """Every loader failure shares one opaque, visible fallback contract."""
+    def test_missing_and_corrupt_images_return_visible_rgba_placeholder(
+        self,
+    ) -> None:
+        """Every loader failure shares one opaque, visible fallback
+        contract.
+        """
         with tempfile.TemporaryDirectory() as directory:
             missing = Path(directory) / "missing.png"
             corrupt = Path(directory) / "corrupt.png"

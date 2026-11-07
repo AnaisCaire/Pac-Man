@@ -16,11 +16,15 @@ def draw_maze(surface: pygame.Surface, maze: Maze, tile_size: int,
             py = offset_y + y * tile_size
 
             if maze.is_wall(x, y):
-                pygame.draw.rect(surface, WALL_COLOR, (px, py, tile_size, tile_size))
+                pygame.draw.rect(
+                    surface, WALL_COLOR, (px, py, tile_size, tile_size)
+                )
                 continue
 
             if maze.has_wall(x, y, 'N'):
-                pygame.draw.line(surface, WALL_COLOR, (px, py), (px + tile_size, py))
+                pygame.draw.line(
+                    surface, WALL_COLOR, (px, py), (px + tile_size, py)
+                )
             if maze.has_wall(x, y, 'E'):
                 pygame.draw.line(surface, WALL_COLOR, (px + tile_size,
                                  py), (px + tile_size, py + tile_size))
@@ -28,7 +32,9 @@ def draw_maze(surface: pygame.Surface, maze: Maze, tile_size: int,
                 pygame.draw.line(surface, WALL_COLOR, (px, py + tile_size),
                                  (px + tile_size, py + tile_size))
             if maze.has_wall(x, y, 'W'):
-                pygame.draw.line(surface, WALL_COLOR, (px, py), (px, py + tile_size))
+                pygame.draw.line(
+                    surface, WALL_COLOR, (px, py), (px, py + tile_size)
+                )
 
 
 def draw_pacgums(

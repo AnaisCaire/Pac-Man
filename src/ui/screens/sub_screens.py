@@ -87,7 +87,9 @@ class InstructionsScreen():
         raw_image = raster.load_rgba(str(_IMAGES_DIR / "instructions.png"))
         help_height = len(EVALUATOR_HELP) * _HELP_LINE_HEIGHT
         max_h = by - 40 - help_height
-        scale = min(screen_width / raw_image.shape[0], max_h / raw_image.shape[1])
+        scale = min(
+            screen_width / raw_image.shape[0], max_h / raw_image.shape[1]
+        )
         img_w = int(raw_image.shape[0] * scale)
         img_h = int(raw_image.shape[1] * scale)
         self.image = raster.nearest_neighbor_scale(raw_image, img_w, img_h)
@@ -107,7 +109,9 @@ class InstructionsScreen():
         surface.fill(BG_COLOR)
         raster.blit_to_surface(surface, self.image, self.image_rect.topleft)
         for index, line in enumerate(EVALUATOR_HELP):
-            text = bitmap_font.render_text(line, _HELP_FONT_SCALE, (255, 255, 255))
+            text = bitmap_font.render_text(
+                line, _HELP_FONT_SCALE, (255, 255, 255)
+            )
             raster.blit_to_surface(surface, text, (
                 surface.get_width() // 2 - text.shape[0] // 2,
                 self.image_rect.bottom + 10 + index * _HELP_LINE_HEIGHT,
@@ -119,7 +123,10 @@ class PauseScreen():
     """Full-screen pause menu with Resume and Return to Main Menu buttons."""
 
     ACTIONS = {"Resume": "resume", "Return to Menu": "menu"}
-    CONFIRM_ACTIONS = {"Keep Playing": "cancel_menu", "Discard Game": "confirm_menu"}
+    CONFIRM_ACTIONS = {
+        "Keep Playing": "cancel_menu",
+        "Discard Game": "confirm_menu",
+    }
 
     def __init__(self, screen_width: int, screen_height: int) -> None:
         """Load the pause logo and build the initial session actions."""
@@ -162,7 +169,9 @@ class PauseScreen():
         return action
 
     def cancel_confirmation(self) -> None:
-        """Restore the standard pause choices without discarding the session."""
+        """Restore the standard pause choices without discarding the
+        session.
+        """
         if self.confirming_exit:
             self.confirming_exit = False
             self._set_actions(self.ACTIONS)

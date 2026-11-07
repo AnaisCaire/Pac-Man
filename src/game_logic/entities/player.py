@@ -31,6 +31,9 @@ class Player(Entity):
         self.speed: float = PLAYER_SPEED
         self.next_direction: Tuple[int, int] = (0, 0)
         self.moving: bool = False
+        # eye movement for UI
+        self.facing: Tuple[int, int] = (1, 0)
+        self.facing_x: int = 1
 
         # remember spawn so we can reset position on respawn
         self.spawn_x: int = start_grid_x
@@ -57,7 +60,9 @@ class Player(Entity):
         self.invincibility_duration: int = 2000  # 2 seconds
 
     def update(self, maze: Maze) -> None:
-        """Advance the player one frame: handle movement and wall collisions."""
+        """Advance the player one frame: handle movement and wall
+        collisions.
+        """
         if self.moving:
             self.progress += self.speed / self.tile_size
             if self.progress >= 1.0:
@@ -79,6 +84,12 @@ class Player(Entity):
                 self.current_direction = self.next_direction
                 self.moving = True
 
+        # remember where we face; (0, 0) means stopped, so keep the old one
+        if self.current_direction != (0, 0):
+            self.facing = self.current_direction
+        if self.current_direction[0] != 0:
+            self.facing_x = self.current_direction[0]
+
     def update_timers(self, current_time: int) -> None:
         """Check if any active timers have expired.
 
@@ -86,7 +97,10 @@ class Player(Entity):
         this domain method never reads a wall clock itself.
         """
         if self.is_powered_up:
-            if current_time - self.power_up_start_time >= self.power_up_duration:
+            if (
+                current_time - self.power_up_start_time
+                >= self.power_up_duration
+            ):
                 self.is_powered_up = False
 
         # advance death animation
@@ -102,7 +116,10 @@ class Player(Entity):
 
         # expire invincibility window
         if self.is_invincible:
-            if current_time - self.invincibility_start >= self.invincibility_duration:
+            if (
+                current_time - self.invincibility_start
+                >= self.invincibility_duration
+            ):
                 self.is_invincible = False
 
     def start_death_animation(self) -> None:
@@ -131,10 +148,13 @@ class Player(Entity):
         self.moving = False
         self.current_direction = (0, 0)
         self.next_direction = (0, 0)
+        self.facing = (1, 0)
+        self.facing_x = 1
         self.is_dying = False
         self.death_progress = 0.0
         self.is_alive = True
-        # grant brief invincibility so a ghost on the spawn tile can't kill instantly
+        # grant brief invincibility so a ghost on the spawn tile can't kill
+        # instantly
         self.is_invincible = True
         self.invincibility_start = current_time
 
@@ -157,7 +177,11 @@ class Player(Entity):
                 if ghost.is_frightened:
                     self.score += self.points_per_ghost
                     ghost.die()
-                elif not ghost.is_dead and not self.is_invincible and not invincible:
+                elif (
+                    not ghost.is_dead
+                    and not self.is_invincible
+                    and not invincible
+                ):
                     self.start_death_animation()
                     return  # one collision is enough per frame
 

@@ -25,10 +25,14 @@ class GhostSpriteTests(unittest.TestCase):
     def test_loads_all_directional_sprite_files(self) -> None:
         image = np.zeros((1, 1, 4), dtype=np.uint8)
 
-        with patch.object(ghost_draw.raster, "load_rgba", return_value=image) as load:
+        with patch.object(
+            ghost_draw.raster, "load_rgba", return_value=image
+        ) as load:
             ghost_draw._load_ghost_images()
 
-        loaded_names = {Path(call.args[0]).name for call in load.call_args_list}
+        loaded_names = {
+            Path(call.args[0]).name for call in load.call_args_list
+        }
         expected_names = {
             f"{sprite}_ghost_{direction}.png"
             for sprite in ("red", "pink", "cyan", "yellow", "scared")
@@ -37,7 +41,9 @@ class GhostSpriteTests(unittest.TestCase):
         expected_names.add("eyes_death.png")
         self.assertEqual(loaded_names, expected_names)
 
-    def test_selects_direction_for_every_normal_and_frightened_sprite(self) -> None:
+    def test_selects_direction_for_every_normal_and_frightened_sprite(
+        self,
+    ) -> None:
         ghost_draw._GHOST_IMAGES.update({
             f"{sprite}_{direction}": np.zeros((1, 1, 4), dtype=np.uint8)
             for sprite in ("red", "pink", "cyan", "yellow", "scared")
@@ -50,9 +56,13 @@ class GhostSpriteTests(unittest.TestCase):
             ghost.sprite = sprite
             ghost.state = GhostState.CHASE
             ghost.current_direction = (1, 0)
-            self.assertEqual(ghost_draw._pick_image_key(ghost), f"{sprite}_right")
+            self.assertEqual(
+                ghost_draw._pick_image_key(ghost), f"{sprite}_right"
+            )
             ghost.current_direction = (-1, 0)
-            self.assertEqual(ghost_draw._pick_image_key(ghost), f"{sprite}_left")
+            self.assertEqual(
+                ghost_draw._pick_image_key(ghost), f"{sprite}_left"
+            )
 
         ghost.state = GhostState.FRIGHTENED
         ghost.current_direction = (1, 0)
@@ -92,8 +102,12 @@ class GhostSpriteTests(unittest.TestCase):
 
         with (
             patch.object(ghost_draw, "_load_ghost_images"),
-            patch.object(ghost_draw, "_pick_image_key", return_value="red_left"),
-            patch.object(ghost_draw, "_scaled_image", return_value=image) as scale,
+            patch.object(
+                ghost_draw, "_pick_image_key", return_value="red_left"
+            ),
+            patch.object(
+                ghost_draw, "_scaled_image", return_value=image
+            ) as scale,
             patch.object(ghost_draw.raster, "blit_to_surface") as blit,
         ):
             ghost_draw.draw_ghosts(surface, [ghost], 16, 5, 7)

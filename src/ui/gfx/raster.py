@@ -47,11 +47,15 @@ def load_rgba(path: str) -> np.ndarray:
             alpha = np.full(rgb.shape[:2], 255, dtype=np.uint8)
         return np.dstack((rgb, alpha)).astype(np.uint8)
     except (OSError, pygame.error, ValueError) as error:
-        logger.warning("cannot load image %s: %s; using placeholder", path, error)
+        logger.warning(
+            "cannot load image %s: %s; using placeholder", path, error
+        )
         return _placeholder_rgba()
 
 
-def nearest_neighbor_scale(rgba: np.ndarray, width: int, height: int) -> np.ndarray:
+def nearest_neighbor_scale(
+    rgba: np.ndarray, width: int, height: int
+) -> np.ndarray:
     """Resize a (W, H, 4) RGBA array to (width, height, 4).
 
     Nearest-neighbor sampling via index arrays — no `pygame.transform.scale`

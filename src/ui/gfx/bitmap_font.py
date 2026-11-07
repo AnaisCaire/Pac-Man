@@ -65,10 +65,14 @@ _FONT: dict[str, tuple[str, ...]] = {
 def _glyph_mask(char: str) -> np.ndarray:
     """Return the (height, width) boolean pixel mask for a single glyph."""
     rows = _FONT.get(char, _FONT[" "])
-    return np.array([[cell == "#" for cell in row] for row in rows], dtype=bool)
+    return np.array(
+        [[cell == "#" for cell in row] for row in rows], dtype=bool
+    )
 
 
-def render_text(text: str, scale: int, color: tuple[int, int, int]) -> np.ndarray:
+def render_text(
+    text: str, scale: int, color: tuple[int, int, int]
+) -> np.ndarray:
     """Render text to a (width, height, 4) RGBA array using the built-in font.
 
     Unknown characters render as a blank glyph cell rather than raising, so

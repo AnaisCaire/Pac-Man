@@ -43,7 +43,9 @@ class GameSessionTests(unittest.TestCase):
     def test_new_session_and_menu_return_reset_progress(self) -> None:
         session = GameSession(level_index=4, score=120, lives=1)
 
-        state = transition_session(session, GameState.MAIN_MENU, level_count=10)
+        state = transition_session(
+            session, GameState.MAIN_MENU, level_count=10
+        )
         session.reset(Config(lives=3))
 
         self.assertEqual(state, GameState.MAIN_MENU)
@@ -55,7 +57,9 @@ class GameSessionTests(unittest.TestCase):
     def test_timeout_and_defeat_do_not_advance_session(self) -> None:
         session = GameSession(level_index=4, score=120, lives=0)
 
-        state = transition_session(session, GameState.GAME_OVER, level_count=10)
+        state = transition_session(
+            session, GameState.GAME_OVER, level_count=10
+        )
 
         self.assertEqual(state, GameState.GAME_OVER)
         self.assertEqual(

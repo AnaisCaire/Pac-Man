@@ -2,7 +2,9 @@ class Item:
     """Base class for collectible items in the maze."""
 
     def __init__(self, x: int, y: int, points: int, is_super: bool) -> None:
-        """Store an item's grid position, score value, and power-pellet flag."""
+        """Store an item's grid position, score value, and power-pellet
+        flag.
+        """
         self.x = x
         self.y = y
         self.points = points
